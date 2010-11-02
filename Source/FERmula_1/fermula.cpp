@@ -188,7 +188,7 @@ public:
 			}
 			if (voziloInputDeviceState->moveFwdRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,-2.f,0));
+				vmt->preMult(osg::Matrix::translate(0,-1.f,0));
 			}
 			if (voziloInputDeviceState->moveBcwRequest)
 			{
@@ -197,12 +197,12 @@ public:
 			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveFwdRequest))
 				
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(1.5f),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(0.75f),osg::Z_AXIS));
 			}
 			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveFwdRequest))
 				
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.5f),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-0.75f),osg::Z_AXIS));
 			}
 			
 			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveBcwRequest))
