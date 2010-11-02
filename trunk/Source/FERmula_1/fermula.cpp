@@ -344,14 +344,14 @@ int main (int argc, char * argv[])
 	//arTransformB
 	osg::ref_ptr<osg::MatrixTransform> arTransformB = new osg::MatrixTransform();
 	osgART::attachDefaultEventCallbacks(arTransformB,markerB);
-	arTransformB->addChild(osgDB::readNodeFile("data/cesta_rav.3ds"));
+	arTransformB->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.3ds"));
 	arTransformB->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
 
 	//pocetno podesavanje modela
 	voziloInputDeviceStateType* vIDevState = new voziloInputDeviceStateType;
 	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
-	tran_fer->addChild(osgDB::readNodeFile("data/fermula_kork.3DS"));
+	tran_fer->addChild(osgDB::readNodeFile("../../Modeli/fermula_kork.3DS"));
 	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
 	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
 	//update kontrola
@@ -362,12 +362,12 @@ int main (int argc, char * argv[])
 	//grupa model i cesta
 	osg::ref_ptr<osg::Group> mod_ces= new osg::Group();
 	mod_ces->addChild(tran_fer);
-	mod_ces->addChild(osgDB::readNodeFile("data/cesta_rav.3ds"));
+	mod_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
 
 
 	//switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
 	osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
-	switchA->addChild(osgDB::readNodeFile("data/fermula_kork.3DS"),true);
+	switchA->addChild(osgDB::readNodeFile("../../Modeli/fermula_kork.3DS"),true);
 	switchA->addChild(mod_ces,false);
 	arTransformA->addChild(switchA.get());
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
