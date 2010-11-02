@@ -27,9 +27,9 @@ class voziloInputDeviceStateType
 {
 public:
 	voziloInputDeviceStateType::voziloInputDeviceStateType() : 
-	  moveFwdRequest(false), rotLReq(false) {}
-	  bool moveFwdRequest;
-	  bool rotLReq;
+	  moveFwdRequest(false),moveBcwRequest(false), rotLReq(false), rotRReq(false),
+	  resetReq(false){}
+	  bool moveFwdRequest,moveBcwRequest,rotLReq,rotRReq,resetReq;
 };
 
 #pragma region Proximity Callback
@@ -107,38 +107,30 @@ public:
 				switch (ea.getKey()) 
 				{
 				case osgGA::GUIEventAdapter::KEY_Up: 
+
 					voziloInputDeviceState->moveFwdRequest = true;
 					return false;
 
-					//ovaj dio koda se vise ne koristi, kad martinec i mrki dovrse klasu za tipkovnicu neka izbrisu ovo
-					//case osgGA::GUIEventAdapter::KEY_Down:
-					//	tran_fer->preMult(osg::Matrix::translate(0,5,0));
-					//	return true;
 
 				case osgGA::GUIEventAdapter::KEY_Left:
 					voziloInputDeviceState->rotLReq = true;
 					return false;
 
-					//case osgGA::GUIEventAdapter::KEY_Right:
-					//	tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(-10.0f), osg::Z_AXIS));
-					//	tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					//	return true;
+				case osgGA::GUIEventAdapter::KEY_Right:
+					voziloInputDeviceState->rotRReq = true;
+					return false;
 
-					//case osgGA::GUIEventAdapter::KEY_Page_Down:
-					//	tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(10.0f), osg::X_AXIS));   //pokret prema dolje pod kutom
-					//	tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					//	return true;
+				case osgGA::GUIEventAdapter::KEY_Down:
+					voziloInputDeviceState->moveBcwRequest = true;
+					return false;
 
-					//case osgGA::GUIEventAdapter::KEY_Page_Up:
-					//	tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(-10.0f), osg::X_AXIS));  //pokret prema gore pod kutom
-					//	tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					//	return true;
+				case osgGA::GUIEventAdapter::KEY_F1:
+					voziloInputDeviceState->resetReq = true;
+					return false;
 
-					//case osgGA::GUIEventAdapter::KEY_BackSpace:  //Reset transformation
-					//	tran_fer->setMatrix(osg::Matrix::identity());
-					//	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
-					//	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
-					//	return true;
+
+
+					
 				default:
 					return false;
 				}
@@ -153,8 +145,18 @@ public:
 				case osgGA::GUIEventAdapter::KEY_Left:
 					voziloInputDeviceState->rotLReq = false;
 					return false;
+				case osgGA::GUIEventAdapter::KEY_Right:
+					voziloInputDeviceState->rotRReq = false;
+					return false;
+                case osgGA::GUIEventAdapter::KEY_Down:
+					voziloInputDeviceState->moveBcwRequest = false;
+					return false;
+				case osgGA::GUIEventAdapter::KEY_F1:
+					voziloInputDeviceState->resetReq = false;
+					return false;
 				default:
 					return false;
+
 				}
 			}
 			}
@@ -178,13 +180,40 @@ public:
 		osg::MatrixTransform* vmt = dynamic_cast<osg::MatrixTransform*> (node);
 		if (vmt)
 		{
+			if (voziloInputDeviceState->resetReq)
+			{   
+                vmt->setMatrix(osg::Matrix::identity());
+				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
+	            vmt->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
+			}
 			if (voziloInputDeviceState->moveFwdRequest)
+			{
+				vmt->preMult(osg::Matrix::translate(0,-2.f,0));
+			}
+			if (voziloInputDeviceState->moveBcwRequest)
 			{
 				vmt->preMult(osg::Matrix::translate(0,0.5f,0));
 			}
-			if(voziloInputDeviceState->rotLReq)
+			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveFwdRequest))
+				
+			{
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(1.5f),osg::Z_AXIS));
+			}
+			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveFwdRequest))
+				
+			{
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.5f),osg::Z_AXIS));
+			}
+			
+			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveBcwRequest))
+				
 			{
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(0.5f),osg::Z_AXIS));
+			}
+			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveBcwRequest))
+				
+			{
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-0.5f),osg::Z_AXIS));
 			}
 		}
 	}
