@@ -22,7 +22,15 @@
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
 
-osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
+
+class voziloInputDeviceStateType
+{
+public:
+	voziloInputDeviceStateType::voziloInputDeviceStateType() : 
+	  moveFwdRequest(false), rotLReq(false) {}
+	  bool moveFwdRequest;
+	  bool rotLReq;
+};
 
 #pragma region Proximity Callback
 
@@ -76,10 +84,13 @@ public:
 
 #pragma region Keyboard Handler
 
-class MyKeyboardEventHandler : public osgGA::GUIEventHandler {
-
+class MyKeyboardEventHandler : public osgGA::GUIEventHandler 
+{
 public:
-	MyKeyboardEventHandler() : osgGA::GUIEventHandler() { }      
+	MyKeyboardEventHandler(voziloInputDeviceStateType* vids)
+	{
+		voziloInputDeviceState = vids;
+	}
 	/**
 	OVERRIDE THE HANDLE METHOD:
 	The handle() method should return true if the event has been dealt with
@@ -87,86 +98,99 @@ public:
 	defined. Whether you return true or false depends on the behaviour you 
 	want - here we have no other handlers defined so return true.
 	**/
-	virtual bool handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter& aa, 
-		osg::Object* obj, osg::NodeVisitor* nv) 
+	bool MyKeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter& aa) 
 	{ 
 		switch (ea.getEventType()) 
 		{
-
-
-			/** KEY EVENTS:
-			Key events have an associated key and event names.
-			In this example, we are interested in keys up/down/right/left arrow
-			and space bar.
-			If we detect a press then we modify the transformation matrix 
-			of the local transform node. **/
-		case osgGA::GUIEventAdapter::KEYDOWN: 
+		case (osgGA::GUIEventAdapter::KEYDOWN): 
 			{
-
 				switch (ea.getKey()) 
 				{
-				case osgGA::GUIEventAdapter::KEY_Up: // Move forward 5mm
-					//driveCar->preMult(osg::Matrix::translate(0, -5, 0));
-					tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					return true;
+				case osgGA::GUIEventAdapter::KEY_Up: 
+					voziloInputDeviceState->moveFwdRequest = true;
+					return false;
 
-				case osgGA::GUIEventAdapter::KEY_Down:
-					tran_fer->preMult(osg::Matrix::translate(0,5,0));
-					return true;
+					//ovaj dio koda se vise ne koristi, kad martinec i mrki dovrse klasu za tipkovnicu neka izbrisu ovo
+					//case osgGA::GUIEventAdapter::KEY_Down:
+					//	tran_fer->preMult(osg::Matrix::translate(0,5,0));
+					//	return true;
 
 				case osgGA::GUIEventAdapter::KEY_Left:
-					tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(10.0f), osg::Z_AXIS));
-					tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					return true;
+					voziloInputDeviceState->rotLReq = true;
+					return false;
 
-				case osgGA::GUIEventAdapter::KEY_Right:
-					tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(-10.0f), osg::Z_AXIS));
-					tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					return true;
+					//case osgGA::GUIEventAdapter::KEY_Right:
+					//	tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(-10.0f), osg::Z_AXIS));
+					//	tran_fer->preMult(osg::Matrix::translate(0,-5,0));
+					//	return true;
 
-				case osgGA::GUIEventAdapter::KEY_Page_Down:
-					tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(10.0f), osg::X_AXIS));   //pokret prema dolje pod kutom
-					tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					return true;
+					//case osgGA::GUIEventAdapter::KEY_Page_Down:
+					//	tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(10.0f), osg::X_AXIS));   //pokret prema dolje pod kutom
+					//	tran_fer->preMult(osg::Matrix::translate(0,-5,0));
+					//	return true;
 
-				case osgGA::GUIEventAdapter::KEY_Page_Up:
-					tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(-10.0f), osg::X_AXIS));  //pokret prema gore pod kutom
-					tran_fer->preMult(osg::Matrix::translate(0,-5,0));
-					return true;
+					//case osgGA::GUIEventAdapter::KEY_Page_Up:
+					//	tran_fer->preMult(osg::Matrix::rotate(osg::DegreesToRadians(-10.0f), osg::X_AXIS));  //pokret prema gore pod kutom
+					//	tran_fer->preMult(osg::Matrix::translate(0,-5,0));
+					//	return true;
 
-				case osgGA::GUIEventAdapter::KEY_BackSpace:  //Reset transformation
-					tran_fer->setMatrix(osg::Matrix::identity());
-					tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
-					tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
-					return true;
-
-				case ' ': // Reset the transformation
-					//testirao neke stvari, zanemarite ovo, ali ostavite za svaki slucaj
-					//osg::Matrix *m;
-					//cesta->computeWorldToLocalMatrix(*m,nv);
-					//osg::notify(osg::WARN)<<"matrica: "<<*m<<std::endl;
-					//tran_fer->setMatrix(*m);
-					//osg::Vec3 v;
-					//arTransformA->computeLocalToWorldMatrix(*m,nv);
-					//osg::notify(osg::WARN)<<"matrica m: "<<*m<<std::endl << m<<std::endl;
-					//osg::notify(osg::WARN)<<"posit arTransformA: "<<arTransformA->getPosition()<<std::endl;
-					//tran_fer->setPosition(arTransformA->getPosition());
-					//tran_fer->setScale(osg::Vec3(2,2,2));
-					//osg::notify(osg::WARN)<<"posit tran_fer: "<<tran_fer->getPosition()<<std::endl;
-					//tran_fer->setAttitude(arTransformA->getMatrix
-					return true;
+					//case osgGA::GUIEventAdapter::KEY_BackSpace:  //Reset transformation
+					//	tran_fer->setMatrix(osg::Matrix::identity());
+					//	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
+					//	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
+					//	return true;
+				default:
+					return false;
 				}
 
-		default: return false;
-
+		case(osgGA::GUIEventAdapter::KEYUP):
+			{
+				switch(ea.getKey())
+				{
+				case osgGA::GUIEventAdapter::KEY_Up:
+					voziloInputDeviceState->moveFwdRequest = false;
+					return false;
+				case osgGA::GUIEventAdapter::KEY_Left:
+					voziloInputDeviceState->rotLReq = false;
+					return false;
+				default:
+					return false;
+				}
 			}
-
-
+			}
+		default: return false;
 		}
 	}
+protected:
+	voziloInputDeviceStateType* voziloInputDeviceState;
 };
 #pragma endregion
 
+class updateVoziloPosCallback: public osg::NodeCallback
+{
+public:
+	updateVoziloPosCallback::updateVoziloPosCallback(voziloInputDeviceStateType* vids)
+	{
+		voziloInputDeviceState = vids;
+	}
+	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
+	{
+		osg::MatrixTransform* vmt = dynamic_cast<osg::MatrixTransform*> (node);
+		if (vmt)
+		{
+			if (voziloInputDeviceState->moveFwdRequest)
+			{
+				vmt->preMult(osg::Matrix::translate(0,0.5f,0));
+			}
+			if(voziloInputDeviceState->rotLReq)
+			{
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(0.5f),osg::Z_AXIS));
+			}
+		}
+	}
+protected:
+	voziloInputDeviceStateType* voziloInputDeviceState; 
+};
 #pragma region Custom Visibility Callback
 class MyMarkerVisibilityCallback : public osgART::MarkerVisibilityCallback
 {
@@ -210,7 +234,6 @@ int main (int argc, char * argv[])
 	viewer.addEventHandler(new osgViewer::StatsHandler);
 	viewer.addEventHandler(new osgViewer::WindowSizeHandler);
 	viewer.addEventHandler(new osgViewer::ThreadingHandler);
-	viewer.addEventHandler(new MyKeyboardEventHandler);
 
 
 	// preload the video and tracker
@@ -295,15 +318,23 @@ int main (int argc, char * argv[])
 	arTransformB->addChild(osgDB::readNodeFile("data/cesta_rav.3ds"));
 	arTransformB->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
+
+	//pocetno podesavanje modela
+	voziloInputDeviceStateType* vIDevState = new voziloInputDeviceStateType;
+	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
+	tran_fer->addChild(osgDB::readNodeFile("data/fermula_kork.3DS"));
+	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
+	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
+	//update kontrola
+	tran_fer->setUpdateCallback(new updateVoziloPosCallback(vIDevState));
+	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState);
+	viewer.addEventHandler(voziloEventHandler);
+
 	//grupa model i cesta
 	osg::ref_ptr<osg::Group> mod_ces= new osg::Group();
 	mod_ces->addChild(tran_fer);
 	mod_ces->addChild(osgDB::readNodeFile("data/cesta_rav.3ds"));
-	
-	//transformacije modela
-	tran_fer->addChild(osgDB::readNodeFile("data/fermula_kork.3DS"));
-	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
-	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
+
 
 	//switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
 	osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
