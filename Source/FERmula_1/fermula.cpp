@@ -416,7 +416,7 @@ int main (int argc, char * argv[])
 	markerA->setActive(true);
 
 	//markerB
-	osg::ref_ptr<osgART::Marker> markerB = tracker->addMarker("single;data/armedia.patt;75;0;0");
+	osg::ref_ptr<osgART::Marker> markerB = tracker->addMarker("single;data/patt.sample1;80;0;0");
 	if (!markerB.valid()) 
 	{
 		// Without marker an AR application can not work. Quit if none found.
@@ -462,7 +462,7 @@ int main (int argc, char * argv[])
 
 	//switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
 	osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
-	switchA->addChild(osgDB::readNodeFile("../../Modeli/fermula_kork.3DS"),true);
+	switchA->addChild(tran_fer,true);
 	switchA->addChild(mod_ces,false);
 	arTransformA->addChild(switchA.get());
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
