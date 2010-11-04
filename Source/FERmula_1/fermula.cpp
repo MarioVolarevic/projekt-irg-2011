@@ -151,7 +151,8 @@ public:
 	want - here we have no other handlers defined so return true.
 	**/
 	bool MyKeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter& aa) 
-	{ 
+	{
+
 		switch (ea.getEventType()) 
 		{
 		case (osgGA::GUIEventAdapter::KEYDOWN): 
@@ -282,12 +283,13 @@ public:
 			}
 			if (voziloInputDeviceState->moveFwdRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,-1.f,0));
+				vmt->preMult(osg::Matrix::translate(0,-0.5f,0));
 			}
 			if (voziloInputDeviceState->moveBcwRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,0.5f,0));
+				vmt->preMult(osg::Matrix::translate(0,0.25f,0));
 			}
+			
 			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveFwdRequest))
 				
 			{
@@ -342,7 +344,6 @@ osg::Group* createImageBackground(osg::Image* video) {
 	_layer->addChild(_geode);
 	return _layer;
 }
-
 
 
 int main (int argc, char * argv[])
@@ -415,7 +416,7 @@ int main (int argc, char * argv[])
 	markerA->setActive(true);
 
 	//markerB
-	osg::ref_ptr<osgART::Marker> markerB = tracker->addMarker("single;data/patt.sample1;80;0;0");
+	osg::ref_ptr<osgART::Marker> markerB = tracker->addMarker("single;data/armedia.patt;75;0;0");
 	if (!markerB.valid()) 
 	{
 		// Without marker an AR application can not work. Quit if none found.
@@ -445,7 +446,7 @@ int main (int argc, char * argv[])
 	//pocetno podesavanje modela
 	voziloInputDeviceStateType* vIDevState = new voziloInputDeviceStateType;
 	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
-	tran_fer->addChild(osgDB::readNodeFile("../../Modeli/fermula_kork.3DS"));
+	tran_fer->addChild(Model);
 	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
 	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
 	//update kontrola
@@ -461,8 +462,7 @@ int main (int argc, char * argv[])
 
 	//switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
 	osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
-	//switchA->addChild(osgDB::readNodeFile("../../Modeli/fermula_kork.3DS"),true);
-	switchA->addChild(tran_fer,true);
+	switchA->addChild(osgDB::readNodeFile("../../Modeli/fermula_kork.3DS"),true);
 	switchA->addChild(mod_ces,false);
 	arTransformA->addChild(switchA.get());
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
