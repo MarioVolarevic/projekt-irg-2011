@@ -22,6 +22,58 @@
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
 
+osg::ref_ptr<osg::Node> Model =  osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
+int okrenutL = 0;
+int okrenutD = 0;
+
+// funkcija za traženje dijelova modela (služi za animaciju kotaèa)
+osg::Node* FindNodeByName( osg::Node* pNode, const std::string& sName )
+{
+    if ( pNode->getName()==sName )
+    {
+        return pNode;
+    }
+
+    osg::Group* pGroup = pNode->asGroup();
+    if ( pGroup )
+    {
+        for ( unsigned int i=0; i<pGroup->getNumChildren(); i++ )
+        {
+            osg::Node* pFound = FindNodeByName( pGroup->getChild(i), sName );
+            if ( pFound )
+            {
+                return pFound;
+            }
+        }
+    }
+
+    return 0;
+}
+
+// funkcija za povezivanje dijela modela i transformacije
+
+osg::MatrixTransform* AddMatrixTransform( osg::Node* pNode )
+{
+    // parent must derive from osg::Group
+
+	osg::Group* pGroup = pNode->getParent(0)->asGroup();
+    if ( pGroup )
+    {
+        // make sure we have a reference count at all time!
+        osg::ref_ptr<osg::Node> pNodeTmp = pNode;
+
+        // remove pNode from parent
+        pGroup->removeChild( pNodeTmp.get() );
+
+        // create matrixtransform and do connections
+        osg::MatrixTransform* pMT = new osg::MatrixTransform;
+        pMT->addChild( pNodeTmp.get() );
+        pGroup->addChild( pMT );
+        return pMT;
+    }
+
+    return 0;
+}
 
 class voziloInputDeviceStateType
 {
@@ -113,12 +165,36 @@ public:
 
 
 				case osgGA::GUIEventAdapter::KEY_Left:
+					{
 					voziloInputDeviceState->rotLReq = true;
+					if (okrenutL == 0) 
+					{
+						okrenutL = 1;
+						osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
+						osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
+						osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
+						osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
+						ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
+						dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
+					}
 					return false;
+					}
 
 				case osgGA::GUIEventAdapter::KEY_Right:
+					{
 					voziloInputDeviceState->rotRReq = true;
+					if (okrenutD == 0)
+					{
+						okrenutD = 1;
+						osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
+						osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
+						osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
+						osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
+						ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
+						dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
+					}
 					return false;
+					}
 
 				case osgGA::GUIEventAdapter::KEY_Down:
 					voziloInputDeviceState->moveBcwRequest = true;
@@ -143,11 +219,29 @@ public:
 					voziloInputDeviceState->moveFwdRequest = false;
 					return false;
 				case osgGA::GUIEventAdapter::KEY_Left:
+					{
 					voziloInputDeviceState->rotLReq = false;
+					okrenutL = 0;
+					osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
+					osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
+					osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
+					osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
+					ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
+					dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
 					return false;
+					}
 				case osgGA::GUIEventAdapter::KEY_Right:
+					{
 					voziloInputDeviceState->rotRReq = false;
+					okrenutD = 0;
+					osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
+					osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
+					osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
+					osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
+					ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
+					dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
 					return false;
+					}
                 case osgGA::GUIEventAdapter::KEY_Down:
 					voziloInputDeviceState->moveBcwRequest = false;
 					return false;
