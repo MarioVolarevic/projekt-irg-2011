@@ -1,5 +1,5 @@
 #include "windows.h"
-
+#include "VoziloInputDeviceStateType.h"
 #include <osgART/Foundation>
 #include <osgART/VideoLayer>
 #include <osgART/PluginManager>
@@ -13,6 +13,7 @@
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 
+#include <osg/GraphicsContext>
 #include <osg/positionattitudetransform>
 #include <osg/matrixtransform>
 #include <osg/switch>
@@ -21,12 +22,14 @@
 
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
+osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 
-osg::ref_ptr<osg::Node> Model =  osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
-int okrenutL = 0;
-int okrenutD = 0;
+//osg::ref_ptr<osg::Node> Model =  osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
+//int okrenutL = 0;
+//int okrenutD = 0;
 
-// funkcija za traženje dijelova modela (služi za animaciju kotaèa)
+#pragma region trazenje i povezivanje dijela modela
+// funkcija za traženje dijelova modela (služi za animaciju kotaca)
 osg::Node* FindNodeByName( osg::Node* pNode, const std::string& sName )
 {
 	if ( pNode->getName()==sName )
@@ -51,7 +54,6 @@ osg::Node* FindNodeByName( osg::Node* pNode, const std::string& sName )
 }
 
 // funkcija za povezivanje dijela modela i transformacije
-
 osg::MatrixTransform* AddMatrixTransform( osg::Node* pNode )
 {
 	// parent must derive from osg::Group
@@ -74,38 +76,91 @@ osg::MatrixTransform* AddMatrixTransform( osg::Node* pNode )
 
 	return 0;
 }
+#pragma endregion
 
-class voziloInputDeviceStateType
+class FrameLimiter
+{
+private:
+	osg::Timer timer;
+	osg::Timer_t c_time;
+	osg::Timer_t p_time;
+	int fps;
+
+public:
+	FrameLimiter::FrameLimiter(int n)
+	{
+		fps = n;
+	}
+
+	void frame_limit(){
+		while(timer.delta_s(p_time,c_time) < (1.0/fps)){
+			//Update the current time
+			c_time = timer.tick();
+		}
+		//Set the previous frame time to that of the current frame time.
+		p_time = c_time;
+	}
+};
+class Vozilo
 {
 public:
-	voziloInputDeviceStateType::voziloInputDeviceStateType() : 
-	  moveFwdRequest(false),moveBcwRequest(false), rotLReq(false), rotRReq(false),
-		  resetReq(false){}
-	  bool moveFwdRequest,moveBcwRequest,rotLReq,rotRReq,resetReq;
-};
+	osg::Node* Model;
+	int okrenutL;
+	int okrenutD;
+	Vozilo(std::string ime_mod)
+	{
+		Model = osgDB::readNodeFile(ime_mod);
+		okrenutL = 0;
+		okrenutD = 0;
+	}
+	//Model = osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
 
+	void okreniLijevo(bool t)
+	{
+		if (t) okrenutL = 1;
+		else okrenutD = 0;
+		osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
+		osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
+		osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
+		osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
+		ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
+		dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
+	}
+	void okreniDesno(bool t)
+	{
+		if (t) okrenutD = 1;
+		else okrenutL = 0;
+		osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
+		osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
+		osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
+		osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
+		ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
+		dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
+	}
+	//void promijeniModel(std::string n)
+	//{
+	//	Model = osgDB::readNodeFile(n);
+	//}
+
+};
 #pragma region Proximity Callback
 
-class MarkerProximityUpdateCallback : public osg::NodeCallback {
-
+class MarkerProximityUpdateCallback : public osg::NodeCallback 
+{
 private:
 	osg::MatrixTransform* mtA;
 	osg::MatrixTransform* mtB;
-
 	osg::Switch* mSwitchA;
-
 	float mThreshold;
 
 public:
-
 	MarkerProximityUpdateCallback(osg::MatrixTransform* mA, osg::MatrixTransform* mB, osg::Switch* switchA, float threshold) : 
 	  osg::NodeCallback(), 
 		  mtA(mA), mtB(mB),
 		  mSwitchA(switchA), mThreshold(threshold) { }
 
-
-	  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) {
-
+	  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) 
+	  {
 		  /** CALCULATE INTER-MARKER PROXIMITY:
 		  Here we obtain the current position of each marker, and the
 		  distance between them by examining
@@ -126,10 +181,7 @@ public:
 		  } else {
 			  if (mSwitchA->getNumChildren() > 0) mSwitchA->setSingleChildOn(0);
 		  }
-
-
 		  traverse(node,nv);
-
 	  }
 };
 #pragma endregion
@@ -138,10 +190,16 @@ public:
 
 class MyKeyboardEventHandler : public osgGA::GUIEventHandler 
 {
+protected:
+	VoziloInputDeviceStateType* voziloInputDeviceState;
+	Vozilo* v;
+	//int i;
+
 public:
-	MyKeyboardEventHandler(voziloInputDeviceStateType* vids)
+	MyKeyboardEventHandler(VoziloInputDeviceStateType* vids, Vozilo* vozilo)
 	{
 		voziloInputDeviceState = vids;
+		v = vozilo;
 	}
 	/**
 	OVERRIDE THE HANDLE METHOD:
@@ -160,43 +218,23 @@ public:
 				switch (ea.getKey()) 
 				{
 				case osgGA::GUIEventAdapter::KEY_Up: 
-
 					voziloInputDeviceState->moveFwdRequest = true;
 					return false;
-
 
 				case osgGA::GUIEventAdapter::KEY_Left:
 					{
 						voziloInputDeviceState->rotLReq = true;
-						if (okrenutL == 0) 
-						{
-							okrenutL = 1;
-							osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
-							osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
-							osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
-							osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
-							ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
-							dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
-						}
+						if (v->okrenutL == 0)
+							v->okreniLijevo(true);
 						return false;
 					}
-
 				case osgGA::GUIEventAdapter::KEY_Right:
 					{
 						voziloInputDeviceState->rotRReq = true;
-						if (okrenutD == 0)
-						{
-							okrenutD = 1;
-							osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
-							osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
-							osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
-							osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
-							ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
-							dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
-						}
+						if (v->okrenutD == 0)
+							v->okreniDesno(true);
 						return false;
 					}
-
 				case osgGA::GUIEventAdapter::KEY_Down:
 					voziloInputDeviceState->moveBcwRequest = true;
 					return false;
@@ -205,9 +243,13 @@ public:
 					voziloInputDeviceState->resetReq = true;
 					return false;
 
+				case 'y':
+					voziloInputDeviceState->promijeniModel = 1;
+					return false;
 
-
-
+				case 'x':
+					voziloInputDeviceState->promijeniModel = 2;
+					return false;
 				default:
 					return false;
 				}
@@ -222,25 +264,13 @@ public:
 				case osgGA::GUIEventAdapter::KEY_Left:
 					{
 						voziloInputDeviceState->rotLReq = false;
-						okrenutL = 0;
-						osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
-						osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
-						osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
-						osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
-						ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
-						dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
+						v->okreniDesno(false);
 						return false;
 					}
 				case osgGA::GUIEventAdapter::KEY_Right:
 					{
 						voziloInputDeviceState->rotRReq = false;
-						okrenutD = 0;
-						osg::Node* lijeviKotac = FindNodeByName( Model, "kotacPL" );
-						osg::Node* desniKotac = FindNodeByName( Model, "kotacPD" );
-						osg::MatrixTransform* ltr = AddMatrixTransform(lijeviKotac);
-						osg::MatrixTransform* dtr = AddMatrixTransform(desniKotac);
-						ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
-						dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(30.0f),osg::Z_AXIS));
+						v->okreniLijevo(false);
 						return false;
 					}
 				case osgGA::GUIEventAdapter::KEY_Down:
@@ -249,30 +279,39 @@ public:
 				case osgGA::GUIEventAdapter::KEY_F1:
 					voziloInputDeviceState->resetReq = false;
 					return false;
+				case 'y':
+					voziloInputDeviceState->promijeniModel = 0;
+					return false;
+				case 'x':
+					voziloInputDeviceState->promijeniModel = 0;
+					return false;
 				default:
 					return false;
-
 				}
 			}
 			}
 		default: return false;
 		}
 	}
-protected:
-	voziloInputDeviceStateType* voziloInputDeviceState;
 };
 #pragma endregion
 
 class updateVoziloPosCallback: public osg::NodeCallback
 {
+protected:
+	VoziloInputDeviceStateType* voziloInputDeviceState; 
+	Vozilo* v;//za izbrisat
+
 public:
-	updateVoziloPosCallback::updateVoziloPosCallback(voziloInputDeviceStateType* vids)
+	updateVoziloPosCallback::updateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo) //izbrisat vozilo
 	{
 		voziloInputDeviceState = vids;
+		v = vozilo; //izbrisat
 	}
 	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
 	{
 		osg::MatrixTransform* vmt = dynamic_cast<osg::MatrixTransform*> (node);
+		
 		if (vmt)
 		{
 			if (voziloInputDeviceState->resetReq)
@@ -283,7 +322,7 @@ public:
 			}
 			if (voziloInputDeviceState->moveFwdRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,-2.5f,0));
+				vmt->preMult(osg::Matrix::translate(0,-2.0f,0));
 			}
 			if (voziloInputDeviceState->moveBcwRequest)
 			{
@@ -293,12 +332,12 @@ public:
 			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveFwdRequest))
 
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(0.8f),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(2.0f),osg::Z_AXIS));
 			}
 			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveFwdRequest))
 
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-0.8f),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-2.0f),osg::Z_AXIS));
 			}
 
 			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveBcwRequest))
@@ -311,27 +350,33 @@ public:
 			{
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.2f),osg::Z_AXIS));
 			}
+			if(voziloInputDeviceState->promijeniModel == 1) {
+				tran_fer->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1_mod.3DS")); 
+			}
+			else if (voziloInputDeviceState->promijeniModel == 2)
+				tran_fer->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
+
+
 		}
 	}
-protected:
-	voziloInputDeviceStateType* voziloInputDeviceState; 
 };
+
 #pragma region Custom Visibility Callback
-class MyMarkerVisibilityCallback : public osgART::MarkerVisibilityCallback
-{
-public:
-	MyMarkerVisibilityCallback(osgART::Marker* marker):osgART::MarkerVisibilityCallback(marker){}
-	void operator()(osg::Node* node, osg::NodeVisitor* nv) 
-	{
-		if (osg::Switch* _switch = dynamic_cast<osg::Switch*>(node)) {
-			_switch->setSingleChildOn(m_marker->valid() ? 0 : 1);   
-		} else {
-			node->setNodeMask(0xFFFFFFFF);
-			nv->setNodeMaskOverride(0x0);
-		}
-		traverse(node,nv);
-	}
-};
+//class MyMarkerVisibilityCallback : public osgART::MarkerVisibilityCallback
+//{
+//public:
+//	MyMarkerVisibilityCallback(osgART::Marker* marker):osgART::MarkerVisibilityCallback(marker){}
+//	void operator()(osg::Node* node, osg::NodeVisitor* nv) 
+//	{
+//		if (osg::Switch* _switch = dynamic_cast<osg::Switch*>(node)) {
+//			_switch->setSingleChildOn(m_marker->valid() ? 0 : 1);   
+//		} else {
+//			node->setNodeMask(0xFFFFFFFF);
+//			nv->setNodeMaskOverride(0x0);
+//		}
+//		traverse(node,nv);
+//	}
+//};
 
 
 #pragma endregion //zasad se ne koristi
@@ -344,7 +389,6 @@ osg::Group* createImageBackground(osg::Image* video) {
 	_layer->addChild(_geode);
 	return _layer;
 }
-
 
 int main (int argc, char * argv[])
 {
@@ -434,6 +478,15 @@ int main (int argc, char * argv[])
 	}
 	markerC->setActive(true);
 
+	//markerD
+	osg::ref_ptr<osgART::Marker> markerD = tracker->addMarker("single;data/armedia.patt;75;0;0");
+	if (!markerD.valid())
+	{
+		osg::notify(osg::FATAL) << "Could not add marker!" << std::endl;
+		exit(-1);
+	}
+	markerD->setActive(true);
+
 	//video
 	osg::ref_ptr<osg::Group> videoBackground = createImageBackground(video.get());
 	videoBackground->getOrCreateStateSet()->setRenderBinDetails(0, "RenderBin");
@@ -457,18 +510,25 @@ int main (int argc, char * argv[])
 	arTransformC->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.3ds"));
 	arTransformC->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
-
+	//arTransformD
+	osg::ref_ptr<osg::MatrixTransform> arTransformD = new osg::MatrixTransform();
+	osgART::attachDefaultEventCallbacks(arTransformD,markerD);
+	arTransformD->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
+	arTransformD->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
 	//pocetno podesavanje modela
-	voziloInputDeviceStateType* vIDevState = new voziloInputDeviceStateType;
-	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
-	tran_fer->addChild(Model);
+	VoziloInputDeviceStateType* vIDevState = new VoziloInputDeviceStateType;
+	//osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
+	Vozilo* v1 = new Vozilo("../../Modeli/fermula_kork.3DS");
+	Vozilo* v2 = new Vozilo("../../Modeli/ana_f1_mod.3DS");
+	tran_fer->addChild(v1->Model);
 	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
 	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
 	//update kontrola
-	tran_fer->setUpdateCallback(new updateVoziloPosCallback(vIDevState));
-	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState);
+	tran_fer->setUpdateCallback(new updateVoziloPosCallback(vIDevState,v1));
+	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState, v1);
 	viewer.addEventHandler(voziloEventHandler);
+
 
 	//grupa model i cesta
 	osg::ref_ptr<osg::Group> mod_ces= new osg::Group();
@@ -480,19 +540,27 @@ int main (int argc, char * argv[])
 	osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
 	switchA->addChild(tran_fer,true);
 	switchA->addChild(mod_ces,false);
-	arTransformA->addChild(switchA.get());
+	arTransformA->addChild(switchA);
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
 
 
 	cam->addChild(arTransformA);
 	cam->addChild(arTransformB);
 	cam->addChild(arTransformC);
+	cam->addChild(arTransformD);
 	cam->addChild(videoBackground.get());
 	root->addChild(cam.get());
-	root->setUpdateCallback(new MarkerProximityUpdateCallback(arTransformA, arTransformB,switchA.get(),300));
+	root->setUpdateCallback(new MarkerProximityUpdateCallback(arTransformA, arTransformB,switchA,300));
 
 	video->start();
-	int r = viewer.run();   
+	//int r = viewer.run();  
+	FrameLimiter* fl = new FrameLimiter(60);
+	viewer.realize();
+	while (!viewer.done())
+	{
+		fl->frame_limit();
+		viewer.frame();
+	}
 	video->close();
-	return r;
+	//return r;
 }
