@@ -24,19 +24,21 @@
 #include <osgDB/ReadFile>
 
 
-float brzina=-0.5f;
+float brzina=-50.0f;
 
 class voziloInputDeviceStateType
 {
 public:
 	voziloInputDeviceStateType::voziloInputDeviceStateType() : 
-	  moveFwdRequest(false), rotLReq(false), rotRReq(false), moveDwnRequest(false), brzinaUp(false), brzinaDown(false) {}
+	  moveFwdRequest(false), rotLReq(false), rotRReq(false), moveDwnRequest(false), brzinaUp(false), brzinaDown(false),
+	  resetReq(false){}
 	  bool moveFwdRequest;
 	  bool rotLReq;
 	  bool rotRReq;
 	  bool moveDwnRequest;
 	  bool brzinaUp;
 	  bool brzinaDown;
+	  bool resetReq;
 };
 
 #pragma region Proximity Callback
@@ -132,10 +134,14 @@ public:
 				case osgGA::GUIEventAdapter::KEY_Page_Up:
 					voziloInputDeviceState->brzinaUp = true;
 					return false;
-				
+
 				case osgGA::GUIEventAdapter::KEY_Page_Down:
 					voziloInputDeviceState->brzinaDown = true;
 					return false;
+				case osgGA::GUIEventAdapter::KEY_F1:
+					voziloInputDeviceState->resetReq = true;
+					return false;
+
 
 				default:
 					return false;
@@ -163,6 +169,10 @@ public:
 				case osgGA::GUIEventAdapter::KEY_Page_Down:
 					voziloInputDeviceState->brzinaDown = false;
 					return false;
+				case osgGA::GUIEventAdapter::KEY_F1:
+					voziloInputDeviceState->resetReq = false;
+					return false;
+
 				default:
 					return false;
 				}
@@ -190,7 +200,7 @@ public:
 		{
 			if (voziloInputDeviceState->moveFwdRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,brzina,0));
+				vmt->preMult(osg::Matrix::translate(0,brzina/100,0));
 			}
 			if(voziloInputDeviceState->rotLReq)
 			{
@@ -206,13 +216,22 @@ public:
 			}
 			if(voziloInputDeviceState->brzinaUp)
 			{
-				if((brzina<=-0.5f)  && (brzina>=-1.0f))
-					brzina-=0.1f;
+				if((brzina<=-50)  && (brzina>=-100)){
+				brzina-=0.1f;
+				std::cout << "brzina = " << brzina << std::endl;}
+				else {brzina = -100;
+				std::cout << "brzina = " << brzina << std::endl;}
+
+
 			}
 			if(voziloInputDeviceState->brzinaDown)
 			{
-				if((brzina<=-0.5f) && (brzina>=-1.0f))
-					brzina+=0.1f;
+				if((brzina<=-50) && (brzina>=-100)){
+				brzina+=0.1f;
+				std::cout << "brzina = " << brzina << std::endl;}
+				else {brzina = -50;
+				std::cout << "brzina = " << brzina << std::endl;}
+
 			}
 		}
 	}
