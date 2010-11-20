@@ -24,7 +24,7 @@
 #include <osgDB/ReadFile>
 
 
-float brzina=-50.0f;
+int brzina=-50.0f;
 
 class voziloInputDeviceStateType
 {
@@ -39,6 +39,7 @@ public:
 	  bool brzinaUp;
 	  bool brzinaDown;
 	  bool resetReq;
+ 
 };
 
 #pragma region Proximity Callback
@@ -134,14 +135,10 @@ public:
 				case osgGA::GUIEventAdapter::KEY_Page_Up:
 					voziloInputDeviceState->brzinaUp = true;
 					return false;
-
+				
 				case osgGA::GUIEventAdapter::KEY_Page_Down:
 					voziloInputDeviceState->brzinaDown = true;
 					return false;
-				case osgGA::GUIEventAdapter::KEY_F1:
-					voziloInputDeviceState->resetReq = true;
-					return false;
-
 
 				default:
 					return false;
@@ -169,10 +166,6 @@ public:
 				case osgGA::GUIEventAdapter::KEY_Page_Down:
 					voziloInputDeviceState->brzinaDown = false;
 					return false;
-				case osgGA::GUIEventAdapter::KEY_F1:
-					voziloInputDeviceState->resetReq = false;
-					return false;
-
 				default:
 					return false;
 				}
@@ -198,9 +191,9 @@ public:
 		osg::MatrixTransform* vmt = dynamic_cast<osg::MatrixTransform*> (node);
 		if (vmt)
 		{
-			if (voziloInputDeviceState->moveFwdRequest)
+			if(voziloInputDeviceState->moveFwdRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,brzina/100,0));
+				vmt->preMult(osg::Matrix::translate(0,brzina/100.0f,0));
 			}
 			if(voziloInputDeviceState->rotLReq)
 			{
@@ -216,23 +209,24 @@ public:
 			}
 			if(voziloInputDeviceState->brzinaUp)
 			{
-				if((brzina<=-50)  && (brzina>=-100)){
-				brzina-=0.1f;
+				if((brzina<=-50.0f)  && (brzina>=-100.0f)){
+				brzina-=1.0f;
 				std::cout << "brzina = " << brzina << std::endl;}
-				else {brzina = -100;
+				else {brzina = -100.0f;
 				std::cout << "brzina = " << brzina << std::endl;}
 
-
+ 
 			}
 			if(voziloInputDeviceState->brzinaDown)
 			{
-				if((brzina<=-50) && (brzina>=-100)){
-				brzina+=0.1f;
+				if((brzina<=-50.0f) && (brzina>=-100.0f)){
+				brzina+=1.0f;
 				std::cout << "brzina = " << brzina << std::endl;}
-				else {brzina = -50;
+				else {brzina = -50.0f;
 				std::cout << "brzina = " << brzina << std::endl;}
 
 			}
+			
 		}
 	}
 protected:
