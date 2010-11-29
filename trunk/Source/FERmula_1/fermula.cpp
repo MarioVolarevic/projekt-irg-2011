@@ -105,6 +105,7 @@ class Vozilo
 {
 public:
 	osg::Node* Model;
+	int brzina;
 	int okrenutL;
 	int okrenutD;
 	Vozilo(std::string ime_mod)
@@ -112,6 +113,7 @@ public:
 		Model = osgDB::readNodeFile(ime_mod);
 		okrenutL = 0;
 		okrenutD = 0;
+		brzina = 0;
 	}
 	//Model = osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
 
@@ -300,13 +302,13 @@ class updateVoziloPosCallback: public osg::NodeCallback
 {
 protected:
 	VoziloInputDeviceStateType* voziloInputDeviceState; 
-	Vozilo* v;//za izbrisat
+	Vozilo* v;
 
 public:
-	updateVoziloPosCallback::updateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo) //izbrisat vozilo
+	updateVoziloPosCallback::updateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo)
 	{
 		voziloInputDeviceState = vids;
-		v = vozilo; //izbrisat
+		v = vozilo;
 	}
 	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
 	{
@@ -317,20 +319,43 @@ public:
 			if (voziloInputDeviceState->resetReq)
 			{   
 				vmt->setMatrix(osg::Matrix::identity());
-				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
-				vmt->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
+				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,-150,10)));
 			}
 			if (voziloInputDeviceState->moveFwdRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,-2.0f,0));
+				if(v->brzina>=-350 && v->brzina<=120)
+				{
+				v->brzina-=10;
+				std::cout << "brzinaF = " << v -> brzina << std::endl;
+				}
+				vmt->preMult(osg::Matrix::translate(0,(v->brzina)/100,0));
+			}
+			if (!voziloInputDeviceState->moveFwdRequest)
+			{
+				if (v->brzina < 0){
+					v->brzina+=5;
+					std::cout << "brzinaSfF = " << v -> brzina << std::endl;
+					vmt->preMult(osg::Matrix::translate(0,(v->brzina)/100,0));
+				}
 			}
 			if (voziloInputDeviceState->moveBcwRequest)
 			{
-				vmt->preMult(osg::Matrix::translate(0,0.8f,0));
+				if(v->brzina>=-350 && v->brzina<=120)
+				{
+				v->brzina+=5;
+				std::cout << "brzinaB = " << v -> brzina << std::endl;
+				}
+				vmt->preMult(osg::Matrix::translate(0,(v -> brzina)/100,0));
 			}
-
+			if (!voziloInputDeviceState->moveBcwRequest)
+			{
+				if (v->brzina > 0){
+					v->brzina-=5;
+					std::cout << "brzinaSfB = " << v -> brzina << std::endl;
+					vmt->preMult(osg::Matrix::translate(0,(v -> brzina)/100,0));
+				}
+			}
 			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveFwdRequest))
-
 			{
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(2.0f),osg::Z_AXIS));
 			}
@@ -355,8 +380,6 @@ public:
 			}
 			else if (voziloInputDeviceState->promijeniModel == 2)
 				tran_fer->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
-
-
 		}
 	}
 };
@@ -487,6 +510,15 @@ int main (int argc, char * argv[])
 	}
 	markerD->setActive(true);
 
+	//multimarker: zgrada fera i trava
+	osg::ref_ptr<osgART::Marker> markerMult = tracker->addMarker("multi;data/multi/marker_list.dat;60;0;0");
+	if (!(markerMult.valid()))
+	{
+		osg::notify(osg::FATAL) << "Could not add marker! multi" << std::endl;
+		exit(-1);
+	}
+	markerMult->setActive(true);
+
 	//video
 	osg::ref_ptr<osg::Group> videoBackground = createImageBackground(video.get());
 	videoBackground->getOrCreateStateSet()->setRenderBinDetails(0, "RenderBin");
@@ -516,31 +548,39 @@ int main (int argc, char * argv[])
 	arTransformD->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
 	arTransformD->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
+	//arTransformMulti
+	osg::ref_ptr<osg::MatrixTransform> multiTrans = new osg::MatrixTransform();
+	osgART::attachDefaultEventCallbacks(multiTrans, markerMult);
+	multiTrans->addChild(osgDB::readNodeFile("../../Modeli/fer_zgrada_scale.3DS"));
+	multiTrans->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
+
 	//pocetno podesavanje modela
 	VoziloInputDeviceStateType* vIDevState = new VoziloInputDeviceStateType;
-	//osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
-	Vozilo* v1 = new Vozilo("../../Modeli/fermula_kork.3DS");
-	Vozilo* v2 = new Vozilo("../../Modeli/ana_f1_mod.3DS");
-	tran_fer->addChild(v1->Model);
-	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,25)));
-	tran_fer->preMult(osg::Matrix::scale(osg::Vec3(2,2,2)));
+	Vozilo* v = new Vozilo("../../Modeli/fermula_kork.3DS");
+	tran_fer->addChild(v->Model);
+	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,-150,10)));
 	//update kontrola
-	tran_fer->setUpdateCallback(new updateVoziloPosCallback(vIDevState,v1));
-	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState, v1);
+	tran_fer->setUpdateCallback(new updateVoziloPosCallback(vIDevState,v));
+	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState, v);
 	viewer.addEventHandler(voziloEventHandler);
 
+	multiTrans->addChild(tran_fer);
+	osg::ref_ptr<osg::MatrixTransform> tr_ces = new osg::MatrixTransform(osg::Matrix::translate(osg::Vec3(0,-150,0)));
+	tr_ces->preMult(osg::Matrix::scale(osg::Vec3(1,0.5,1)));
+	tr_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
+	multiTrans->addChild(tr_ces);
+	////grupa model i cesta
+	//osg::ref_ptr<osg::Group> mod_ces= new osg::Group();
+	//mod_ces->addChild(tran_fer);
+	//mod_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
 
-	//grupa model i cesta
-	osg::ref_ptr<osg::Group> mod_ces= new osg::Group();
-	mod_ces->addChild(tran_fer);
-	mod_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
 
+	////switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
+	//osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
+	//switchA->addChild(tran_fer,true);
+	//switchA->addChild(mod_ces,false);
+	//arTransformA->addChild(switchA);
 
-	//switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
-	osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
-	switchA->addChild(tran_fer,true);
-	switchA->addChild(mod_ces,false);
-	arTransformA->addChild(switchA);
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
 
 
@@ -548,9 +588,10 @@ int main (int argc, char * argv[])
 	cam->addChild(arTransformB);
 	cam->addChild(arTransformC);
 	cam->addChild(arTransformD);
+	cam->addChild(multiTrans);
 	cam->addChild(videoBackground.get());
 	root->addChild(cam.get());
-	root->setUpdateCallback(new MarkerProximityUpdateCallback(arTransformA, arTransformB,switchA,300));
+	//root->setUpdateCallback(new MarkerProximityUpdateCallback(arTransformA, arTransformB,switchA,300));
 
 	video->start();
 	//int r = viewer.run();  
