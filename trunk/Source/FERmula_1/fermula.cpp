@@ -22,7 +22,7 @@
 
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
-osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
+//osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 
 //osg::ref_ptr<osg::Node> Model =  osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
 //int okrenutL = 0;
@@ -146,46 +146,46 @@ public:
 
 };
 #pragma region Proximity Callback
-
-class MarkerProximityUpdateCallback : public osg::NodeCallback 
-{
-private:
-	osg::MatrixTransform* mtA;
-	osg::MatrixTransform* mtB;
-	osg::Switch* mSwitchA;
-	float mThreshold;
-
-public:
-	MarkerProximityUpdateCallback(osg::MatrixTransform* mA, osg::MatrixTransform* mB, osg::Switch* switchA, float threshold) : 
-	  osg::NodeCallback(), 
-		  mtA(mA), mtB(mB),
-		  mSwitchA(switchA), mThreshold(threshold) { }
-
-	  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) 
-	  {
-		  /** CALCULATE INTER-MARKER PROXIMITY:
-		  Here we obtain the current position of each marker, and the
-		  distance between them by examining
-		  the translation components of their parent transformation 
-		  matrices **/
-		  osg::Vec3 posA = mtA->getMatrix().getTrans();
-		  osg::Vec3 posB = mtB->getMatrix().getTrans();
-		  osg::Vec3 offset = posA - posB;
-		  float distance = offset.length();
-		  //scene->setUpdateCallback(new MarkerProximityUpdateCallback(mtA, mtB,switchA.get(),switchB.get(),200.0f)); 
-
-		  /** LOAD APPROPRIATE MODELS:
-		  Here we use each marker's OSG Switch node to swap between
-		  models, depending on the inter-marker distance we have just 
-		  calculated. **/
-		  if (distance <= mThreshold) {
-			  if (mSwitchA->getNumChildren() > 1) mSwitchA->setSingleChildOn(1);
-		  } else {
-			  if (mSwitchA->getNumChildren() > 0) mSwitchA->setSingleChildOn(0);
-		  }
-		  traverse(node,nv);
-	  }
-};
+//
+//class MarkerProximityUpdateCallback : public osg::NodeCallback 
+//{
+//private:
+//	osg::MatrixTransform* mtA;
+//	osg::MatrixTransform* mtB;
+//	osg::Switch* mSwitchA;
+//	float mThreshold;
+//
+//public:
+//	MarkerProximityUpdateCallback(osg::MatrixTransform* mA, osg::MatrixTransform* mB, osg::Switch* switchA, float threshold) : 
+//	  osg::NodeCallback(), 
+//		  mtA(mA), mtB(mB),
+//		  mSwitchA(switchA), mThreshold(threshold) { }
+//
+//	  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) 
+//	  {
+//		  /** CALCULATE INTER-MARKER PROXIMITY:
+//		  Here we obtain the current position of each marker, and the
+//		  distance between them by examining
+//		  the translation components of their parent transformation 
+//		  matrices **/
+//		  osg::Vec3 posA = mtA->getMatrix().getTrans();
+//		  osg::Vec3 posB = mtB->getMatrix().getTrans();
+//		  osg::Vec3 offset = posA - posB;
+//		  float distance = offset.length();
+//		  //scene->setUpdateCallback(new MarkerProximityUpdateCallback(mtA, mtB,switchA.get(),switchB.get(),200.0f)); 
+//
+//		  /** LOAD APPROPRIATE MODELS:
+//		  Here we use each marker's OSG Switch node to swap between
+//		  models, depending on the inter-marker distance we have just 
+//		  calculated. **/
+//		  if (distance <= mThreshold) {
+//			  if (mSwitchA->getNumChildren() > 1) mSwitchA->setSingleChildOn(1);
+//		  } else {
+//			  if (mSwitchA->getNumChildren() > 0) mSwitchA->setSingleChildOn(0);
+//		  }
+//		  traverse(node,nv);
+//	  }
+//};
 #pragma endregion
 
 #pragma region Keyboard Handler
@@ -298,22 +298,51 @@ public:
 };
 #pragma endregion
 
-class updateVoziloPosCallback: public osg::NodeCallback
+//class CollisionTestCallback : public osg::NodeCallback
+//{
+//protected:
+//osg::BoundingSphere b1, b2;
+//	osg::Node*a1,*a2;
+//public:
+//	CollisionTestCallback::CollisionTestCallback(osg::Node* n1,osg::Node* n2)
+//	{
+//		a1=n1;
+//		a2=n2;
+//		b1 = a1->getBound();
+//		b2 = a2->getBound();
+//	}
+//	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
+//	{
+//		if(b1.intersects(b2)) std::cout << "Collision" << std::endl;
+//		else std::cout << "No Collision" << std::endl;
+//		//float r1 = b1.radius();		
+//		//float r2 = b2.radius();
+//		//osg::Vec3 c1 = b1.center();
+//		//osg::Vec3 c2 = b2.center();
+//		//std::cout <<"radius1 = "<< r1 <<" centar1 = "<< c1 <<std::endl;
+//		//std::cout <<"radius2 = "<< r2 <<" centar2 = "<< c2 <<std::endl;
+//	}
+//};
+
+class UpdateVoziloPosCallback: public osg::NodeCallback
 {
 protected:
 	VoziloInputDeviceStateType* voziloInputDeviceState; 
 	Vozilo* v;
+osg::BoundingSphere b2;
+	osg::Node*a1;
 
 public:
-	updateVoziloPosCallback::updateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo)
+	UpdateVoziloPosCallback::UpdateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo,osg::Node* n1)
 	{
 		voziloInputDeviceState = vids;
 		v = vozilo;
+		a1=n1;
+		b2 = a1->getBound();
 	}
 	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
 	{
 		osg::MatrixTransform* vmt = dynamic_cast<osg::MatrixTransform*> (node);
-		
 		if (vmt)
 		{
 			if (voziloInputDeviceState->resetReq)
@@ -325,8 +354,8 @@ public:
 			{
 				if(v->brzina>=-350 && v->brzina<=120)
 				{
-				v->brzina-=10;
-				std::cout << "brzinaF = " << v -> brzina << std::endl;
+					v->brzina-=10;
+					std::cout << "brzinaF = " << v -> brzina << std::endl;
 				}
 				vmt->preMult(osg::Matrix::translate(0,(v->brzina)/100,0));
 			}
@@ -342,8 +371,8 @@ public:
 			{
 				if(v->brzina>=-350 && v->brzina<=120)
 				{
-				v->brzina+=5;
-				std::cout << "brzinaB = " << v -> brzina << std::endl;
+					v->brzina+=5;
+					std::cout << "brzinaB = " << v -> brzina << std::endl;
 				}
 				vmt->preMult(osg::Matrix::translate(0,(v -> brzina)/100,0));
 			}
@@ -376,10 +405,21 @@ public:
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.2f),osg::Z_AXIS));
 			}
 			if(voziloInputDeviceState->promijeniModel == 1) {
-				tran_fer->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1_mod.3DS")); 
+				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1_mod.3DS")); 
 			}
 			else if (voziloInputDeviceState->promijeniModel == 2)
-				tran_fer->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
+				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
+
+		osg::BoundingSphere b1=vmt->getBound();
+		if(b1.intersects(b2)) std::cout << "Collision" << std::endl;
+		else std::cout << "No Collision" << std::endl;
+		////float r1 = b1.radius();		
+		////float r2 = b2.radius();
+		////osg::Vec3 c1 = b1.center();
+		////osg::Vec3 c2 = b2.center();
+		////std::cout <<"radius1 = "<< r1 <<" centar1 = "<< c1 <<std::endl;
+		////std::cout <<"radius2 = "<< r2 <<" centar2 = "<< c2 <<std::endl;
+
 		}
 	}
 };
@@ -502,7 +542,7 @@ int main (int argc, char * argv[])
 	markerC->setActive(true);
 
 	//markerD
-	osg::ref_ptr<osgART::Marker> markerD = tracker->addMarker("single;data/armedia.patt;75;0;0");
+	osg::ref_ptr<osgART::Marker> markerD = tracker->addMarker("single;data/armedia.patt;10;0;0");
 	if (!markerD.valid())
 	{
 		osg::notify(osg::FATAL) << "Could not add marker!" << std::endl;
@@ -523,47 +563,58 @@ int main (int argc, char * argv[])
 	osg::ref_ptr<osg::Group> videoBackground = createImageBackground(video.get());
 	videoBackground->getOrCreateStateSet()->setRenderBinDetails(0, "RenderBin");
 
-	//arTransformA
-	osg::ref_ptr<osg::MatrixTransform> arTransformA = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTransformA.get(),markerA.get());
-	//osgART::addEventCallback(arTransformA.get(), new osgART::MarkerTransformCallback(markerA));
-	//osgART::addEventCallback(arTransformA.get(), new MyMarkerVisibilityCallback(markerA));
-	arTransformA->getOrCreateStateSet()->setRenderBinDetails(100, "RenderBin");
+	//arTA, kanjii
+	osg::ref_ptr<osg::MatrixTransform> arTA = new osg::MatrixTransform();
+	osgART::attachDefaultEventCallbacks(arTA.get(),markerA.get());
+	//osgART::addEventCallback(arTA.get(), new osgART::MarkerTransformCallback(markerA));
+	//osgART::addEventCallback(arTA.get(), new MyMarkerVisibilityCallback(markerA));
+	arTA->getOrCreateStateSet()->setRenderBinDetails(100, "RenderBin");
 
-	//arTransformB
-	osg::ref_ptr<osg::MatrixTransform> arTransformB = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTransformB,markerB);
-	arTransformB->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.3ds"));
-	arTransformB->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
+	//arTB, sample1
+	osg::ref_ptr<osg::MatrixTransform> arTB = new osg::MatrixTransform();
+	osgART::attachDefaultEventCallbacks(arTB,markerB);
+	arTB->addChild(osgDB::readNodeFile("../../Modeli/reklama.IVE"));
+	arTB->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
-	//arTransformC
-	osg::ref_ptr<osg::MatrixTransform> arTransformC = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTransformC,markerC);
-	arTransformC->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.3ds"));
-	arTransformC->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
+	//arTC, sample2
+	osg::ref_ptr<osg::MatrixTransform> arTC = new osg::MatrixTransform();
+	osgART::attachDefaultEventCallbacks(arTC,markerC);
+	arTC->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
+	arTC->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
-	//arTransformD
-	osg::ref_ptr<osg::MatrixTransform> arTransformD = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTransformD,markerD);
-	arTransformD->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
-	arTransformD->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
+	//arTD, armedia
+	osg::ref_ptr<osg::MatrixTransform> arTD = new osg::MatrixTransform();
+	osgART::attachDefaultEventCallbacks(arTD,markerD);
+	arTD->addChild(osgDB::readNodeFile("../../Modeli/klupa_drvo.IVE"));
+	arTD->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
+	//const	osg::BoundingSphere &bs1 = arTD->getBound();
+	//const	osg::BoundingSphere &bs2 = arTC->getBound();
+	//float r1 = bs1.radius();
+	//float r2 = bs2.radius();
 
-	//arTransformMulti
+	//std::cout <<"radius1 = "<< r1 <<std::endl;
+	//std::cout <<"radius2 = "<< r2 <<std::endl;
+
+	//arTMulti
 	osg::ref_ptr<osg::MatrixTransform> multiTrans = new osg::MatrixTransform();
 	osgART::attachDefaultEventCallbacks(multiTrans, markerMult);
-	multiTrans->addChild(osgDB::readNodeFile("../../Modeli/fer_zgrada_scale.3DS"));
+	osg::ref_ptr<osg::MatrixTransform> zg_fer = new osg::MatrixTransform();
+	//zg_fer->addChild(osgDB::readNodeFile("../../Modeli/fer_zgrada_scale.3DS"));
+	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_nema_spoja.IVE"));
+	multiTrans->addChild(zg_fer);
 	multiTrans->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
 	//pocetno podesavanje modela
 	VoziloInputDeviceStateType* vIDevState = new VoziloInputDeviceStateType;
 	Vozilo* v = new Vozilo("../../Modeli/fermula_kork.3DS");
+	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 	tran_fer->addChild(v->Model);
 	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,-150,10)));
 	//update kontrola
-	tran_fer->setUpdateCallback(new updateVoziloPosCallback(vIDevState,v));
+	//tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v));
+	tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v,zg_fer));
 	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState, v);
 	viewer.addEventHandler(voziloEventHandler);
-
 	multiTrans->addChild(tran_fer);
 	osg::ref_ptr<osg::MatrixTransform> tr_ces = new osg::MatrixTransform(osg::Matrix::translate(osg::Vec3(0,-150,0)));
 	tr_ces->preMult(osg::Matrix::scale(osg::Vec3(1,0.5,1)));
@@ -579,20 +630,20 @@ int main (int argc, char * argv[])
 	//osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
 	//switchA->addChild(tran_fer,true);
 	//switchA->addChild(mod_ces,false);
-	//arTransformA->addChild(switchA);
+	//arTA->addChild(switchA);
 
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
 
+	//cam->setUpdateCallback(new CollisionTestCallback(tran_fer, zg_fer));
 
-	cam->addChild(arTransformA);
-	cam->addChild(arTransformB);
-	cam->addChild(arTransformC);
-	cam->addChild(arTransformD);
+	cam->addChild(arTA);
+	cam->addChild(arTB);
+	cam->addChild(arTC);
+	cam->addChild(arTD);
 	cam->addChild(multiTrans);
 	cam->addChild(videoBackground.get());
 	root->addChild(cam.get());
-	//root->setUpdateCallback(new MarkerProximityUpdateCallback(arTransformA, arTransformB,switchA,300));
-
+	//root->setUpdateCallback(new MarkerProximityUpdateCallback(arTA, arTB,switchA,300));
 	video->start();
 	//int r = viewer.run();  
 	FrameLimiter* fl = new FrameLimiter(60);
