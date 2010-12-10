@@ -22,6 +22,12 @@
 
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
+
+const float kutZakretanja=5.14f;
+const float kutZakretanjaR=3.14f;
+const int skretanjeLimit=40;
+const int maxBrzina=3000;
+
 //osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 
 //osg::ref_ptr<osg::Node> Model =  osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
@@ -349,61 +355,69 @@ public:
 			{   
 				vmt->setMatrix(osg::Matrix::identity());
 				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,-150,10)));
+				v->brzina=0;
 			}
-			if (voziloInputDeviceState->moveFwdRequest)
+			if ((voziloInputDeviceState->moveFwdRequest)&&(!voziloInputDeviceState->moveBcwRequest))
 			{
-				if(v->brzina>=-350 && v->brzina<=120)
+				if (v->brzina<=maxBrzina)
 				{
-					v->brzina-=10;
+					if (v->brzina<400) v->brzina+=20;
+					else if (v->brzina<1000) v->brzina+=40;
+					else if (v->brzina<2000) v->brzina+=80;
+
 					std::cout << "brzinaF = " << v -> brzina << std::endl;
 				}
-				vmt->preMult(osg::Matrix::translate(0,(v->brzina)/100,0));
+				vmt->preMult(osg::Matrix::translate(0,-(v->brzina)/100,0));
 			}
-			if (!voziloInputDeviceState->moveFwdRequest)
+
+			if ((voziloInputDeviceState->moveBcwRequest)&&(!voziloInputDeviceState->moveFwdRequest))
 			{
-				if (v->brzina < 0){
-					v->brzina+=5;
-					std::cout << "brzinaSfF = " << v -> brzina << std::endl;
-					vmt->preMult(osg::Matrix::translate(0,(v->brzina)/100,0));
-				}
-			}
-			if (voziloInputDeviceState->moveBcwRequest)
-			{
-				if(v->brzina>=-350 && v->brzina<=120)
+				if(v->brzina>=-400)
 				{
-					v->brzina+=5;
+					if (v->brzina>0) v->brzina-=80;
+					else v->brzina-=20;
 					std::cout << "brzinaB = " << v -> brzina << std::endl;
 				}
-				vmt->preMult(osg::Matrix::translate(0,(v -> brzina)/100,0));
-			}
-			if (!voziloInputDeviceState->moveBcwRequest)
+				vmt->preMult(osg::Matrix::translate(0,-(v -> brzina)/100,0));
+			} 
+			if (((!voziloInputDeviceState->moveBcwRequest)&&(!voziloInputDeviceState->moveFwdRequest))
+				||(voziloInputDeviceState->moveBcwRequest)&&(voziloInputDeviceState->moveFwdRequest))
 			{
 				if (v->brzina > 0){
-					v->brzina-=5;
-					std::cout << "brzinaSfB = " << v -> brzina << std::endl;
-					vmt->preMult(osg::Matrix::translate(0,(v -> brzina)/100,0));
+					v->brzina-=40;
 				}
+					
+				if (v->brzina < 0){
+					v->brzina+=40;
+				}
+				std::cout << "brzinaSfF = " << v -> brzina << std::endl;
+					vmt->preMult(osg::Matrix::translate(0,-(v->brzina)/100,0));
+				
 			}
-			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveFwdRequest))
+		
+			
+			
+			if ((voziloInputDeviceState->rotLReq)&&(v->brzina>skretanjeLimit))
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(2.0f),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanja),osg::Z_AXIS));
 			}
-			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveFwdRequest))
+			if ((voziloInputDeviceState->rotRReq)&&(v->brzina>skretanjeLimit))
 
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-2.0f),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanja),osg::Z_AXIS));
 			}
 
-			if ((voziloInputDeviceState->rotRReq)&&(voziloInputDeviceState->moveBcwRequest))
-
-			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(1.2f),osg::Z_AXIS));
-			}
-			if ((voziloInputDeviceState->rotLReq)&&(voziloInputDeviceState->moveBcwRequest))
+			if ((voziloInputDeviceState->rotRReq)&&(v->brzina<-skretanjeLimit))
 
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.2f),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanjaR),osg::Z_AXIS));
 			}
+			if ((voziloInputDeviceState->rotLReq)&&(v->brzina<-skretanjeLimit))
+
+			{
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanjaR),osg::Z_AXIS));
+			}
+			
 			if(voziloInputDeviceState->promijeniModel == 1) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1_mod.3DS")); 
 			}
