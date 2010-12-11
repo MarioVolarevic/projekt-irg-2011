@@ -23,10 +23,10 @@
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
 
-const float kutZakretanja=5.14f;
-const float kutZakretanjaR=3.14f;
-const int skretanjeLimit=40;
-const int maxBrzina=3000;
+const float kutZakretanja=6;
+const float skretanjeLimit=0.4;
+const int maxBrzina=20;
+const int maxBrzinaR=4;
 
 //osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 
@@ -112,6 +112,7 @@ class Vozilo
 public:
 	osg::Node* Model;
 	int brzina;
+	float vrijeme;
 	int okrenutL;
 	int okrenutD;
 	Vozilo(std::string ime_mod)
@@ -120,6 +121,7 @@ public:
 		okrenutL = 0;
 		okrenutD = 0;
 		brzina = 0;
+		vrijeme = 0.f;
 	}
 	//Model = osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
 
@@ -375,47 +377,64 @@ public:
 			{   
 				vmt->setMatrix(osg::Matrix::identity());
 				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,-170,10)));
+				v->brzina=0;
+				v->vrijeme=0;
 			}
 			if ((voziloInputDeviceState->moveFwdRequest)&&(!voziloInputDeviceState->moveBcwRequest))
 
 			{
-				if (v->brzina<=maxBrzina)
+				if (v->brzina<=(maxBrzina-1)&&(v->brzina>=0))
 
 				{
-					if (v->brzina<400) v->brzina+=20;
-					else if (v->brzina<1000) v->brzina+=40;
-					else if (v->brzina<2000) v->brzina+=80;
+					
+					v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme+1));
+					v->vrijeme+=0.03f;
 
-
+					/*if (v->brzina>v->brzina2) { //dodaj brzina2
+					v->brzina2+=1;
 					std::cout << "brzinaF = " << v -> brzina << std::endl;
+					std::cout << "brzinaSfF time  = " << v -> vrijeme << std::endl;
+					}*/
 				}
-				vmt->preMult(osg::Matrix::translate(0,-(v->brzina)/100,0));
+				if (v->brzina<0)
+				{
+					v->brzina+=0.6; //pritisak na gas dok formula ide u rikverc
+				}
+				vmt->preMult(osg::Matrix::translate(0,-(v->brzina),0));
 
 			}
 
 			if ((voziloInputDeviceState->moveBcwRequest)&&(!voziloInputDeviceState->moveFwdRequest))
 
 			{
-				if(v->brzina>=-400)
+				if(v->brzina>=-maxBrzinaR)
 				{
-					if (v->brzina>0) v->brzina-=80;
-					else v->brzina-=20;
+					if (v->brzina>0){
+						v->brzina-=0.7f; //kocenje
+						v->vrijeme=v->brzina/(maxBrzina-v->brzina);
+					}
+					else v->brzina-=0.2; //rikverc
+                       
 					std::cout << "brzinaB = " << v -> brzina << std::endl;
+		
 				}
-				vmt->preMult(osg::Matrix::translate(0,-(v -> brzina)/100,0));
+				vmt->preMult(osg::Matrix::translate(0,-(v -> brzina),0));
 			} 
 			if (((!voziloInputDeviceState->moveBcwRequest)&&(!voziloInputDeviceState->moveFwdRequest))
 				||(voziloInputDeviceState->moveBcwRequest)&&(voziloInputDeviceState->moveFwdRequest))
 			{
 				if (v->brzina > 0){
-					v->brzina-=40;
+					v->brzina-=0.25f;
+					if (v->brzina<0.03) v->brzina=0;
+					v->vrijeme=v->brzina/(maxBrzina-v->brzina);
 				}
 					
 				if (v->brzina < 0){
-					v->brzina+=40;
+					v->brzina+=0.25f;
 				}
 				std::cout << "brzinaSfF = " << v -> brzina << std::endl;
-					vmt->preMult(osg::Matrix::translate(0,-(v->brzina)/100,0));				
+				std::cout << "brzinaSfF time  = " << v -> vrijeme << std::endl;
+					vmt->preMult(osg::Matrix::translate(0,-(v->brzina),0));				
 			}			
 			if ((voziloInputDeviceState->rotLReq)&&(v->brzina>skretanjeLimit))
 			{
@@ -428,11 +447,11 @@ public:
 
 			if ((voziloInputDeviceState->rotRReq)&&(v->brzina<-skretanjeLimit))
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanjaR),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanja),osg::Z_AXIS));
 			}
 			if ((voziloInputDeviceState->rotLReq)&&(v->brzina<-skretanjeLimit))
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanjaR),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanja),osg::Z_AXIS));
 			}
 			
 			//Detekcija kolizije, koristi kvadre
@@ -452,7 +471,7 @@ public:
 			{
 				std::cout << "Collision" << std::endl;
 				vmt->preMult(osg::Matrix::translate(0,(v -> brzina)/100,0));
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanjaR),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanja),osg::Z_AXIS));
 				v->brzina=0;
 			}
 
