@@ -23,10 +23,10 @@
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
 
-const float kutZakretanja=6;
-const float skretanjeLimit=0.4;
-const int maxBrzina=20;
-const int maxBrzinaR=4;
+const float kutZakretanja=5.14f;
+const float kutZakretanjaR=3.14f;
+const int skretanjeLimit=40;
+const int maxBrzina=3000;
 
 //osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 
@@ -112,7 +112,6 @@ class Vozilo
 public:
 	osg::Node* Model;
 	int brzina;
-	float vrijeme;
 	int okrenutL;
 	int okrenutD;
 	Vozilo(std::string ime_mod)
@@ -121,7 +120,6 @@ public:
 		okrenutL = 0;
 		okrenutD = 0;
 		brzina = 0;
-		vrijeme = 0.f;
 	}
 	//Model = osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
 
@@ -260,11 +258,6 @@ public:
 				case 'x':
 					voziloInputDeviceState->promijeniModel = 2;
 					return false;
-
-				case 'c':
-					voziloInputDeviceState->promijeniModel = 3;
-					return false;
-
 				default:
 					return false;
 				}
@@ -298,9 +291,6 @@ public:
 					voziloInputDeviceState->promijeniModel = 0;
 					return false;
 				case 'x':
-					voziloInputDeviceState->promijeniModel = 0;
-					return false;
-				case 'c':
 					voziloInputDeviceState->promijeniModel = 0;
 					return false;
 				default:
@@ -345,29 +335,16 @@ class UpdateVoziloPosCallback: public osg::NodeCallback
 protected:
 	VoziloInputDeviceStateType* voziloInputDeviceState; 
 	Vozilo* v;
-	osg::BoundingSphere b1;
-	osg::BoundingSphere b2;
-	osg::Node* a1;
-	osg::BoundingBox boxVozilo;
-	osg::BoundingBox boxZgrada;
-	float dimX1,dimX2,dimY1,dimY2,dimZ1,dimZ2;
-	float zgX1,zgX2,zgY1,zgY2,zgZ1,zgZ2;
+osg::BoundingSphere b2;
+	osg::Node*a1;
 
 public:
 	UpdateVoziloPosCallback::UpdateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo,osg::Node* n1)
 	{
 		voziloInputDeviceState = vids;
 		v = vozilo;
-		//a1=n1;
-		osg::Node* abc_zg = FindNodeByName(n1,"abc_zgrada");
-		a1 = AddMatrixTransform(abc_zg);
+		a1=n1;
 		b2 = a1->getBound();
-		zgX1= -b2.radius()*0.6f;	//omjeri dimenzija zgrade
-		zgX2= b2.radius()*0.79f;
-		zgY1= -b2.radius()*0.23f;
-		zgY2= b2.radius()*0.23f;
-		zgZ1= -b2.radius()*0.5f;
-		zgZ2= b2.radius()*0.5f;
 	}
 	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
 	{
@@ -377,135 +354,89 @@ public:
 			if (voziloInputDeviceState->resetReq)
 			{   
 				vmt->setMatrix(osg::Matrix::identity());
-				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,-170,10)));
+				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,-150,10)));
 				v->brzina=0;
-				v->vrijeme=0;
+				voziloInputDeviceState->promijeniModel = 2;
 			}
 			if ((voziloInputDeviceState->moveFwdRequest)&&(!voziloInputDeviceState->moveBcwRequest))
-
 			{
-				if (v->brzina<=(maxBrzina-1)&&(v->brzina>=0))
-
+				if (v->brzina<=maxBrzina)
 				{
-					
-					v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme+1));
-					v->vrijeme+=0.03f;
+					if (v->brzina<400) v->brzina+=20;
+					else if (v->brzina<1000) v->brzina+=40;
+					else if (v->brzina<2000) v->brzina+=80;
 
-					/*if (v->brzina>v->brzina2) { //dodaj brzina2
-					v->brzina2+=1;
 					std::cout << "brzinaF = " << v -> brzina << std::endl;
-					std::cout << "brzinaSfF time  = " << v -> vrijeme << std::endl;
-					}*/
 				}
-				if (v->brzina<0)
-				{
-					v->brzina+=0.6; //pritisak na gas dok formula ide u rikverc
-				}
-				vmt->preMult(osg::Matrix::translate(0,-(v->brzina),0));
-
+				vmt->preMult(osg::Matrix::translate(0,-(v->brzina)/100,0));
 			}
 
 			if ((voziloInputDeviceState->moveBcwRequest)&&(!voziloInputDeviceState->moveFwdRequest))
-
 			{
-				if(v->brzina>=-maxBrzinaR)
+				if(v->brzina>=-400)
 				{
-					if (v->brzina>0){
-						v->brzina-=0.7f; //kocenje
-						v->vrijeme=v->brzina/(maxBrzina-v->brzina);
-					}
-					else v->brzina-=0.2; //rikverc
-                       
+					if (v->brzina>0) v->brzina-=80;
+					else v->brzina-=20;
 					std::cout << "brzinaB = " << v -> brzina << std::endl;
-		
 				}
-				vmt->preMult(osg::Matrix::translate(0,-(v -> brzina),0));
+				vmt->preMult(osg::Matrix::translate(0,-(v -> brzina)/100,0));
 			} 
 			if (((!voziloInputDeviceState->moveBcwRequest)&&(!voziloInputDeviceState->moveFwdRequest))
 				||(voziloInputDeviceState->moveBcwRequest)&&(voziloInputDeviceState->moveFwdRequest))
 			{
 				if (v->brzina > 0){
-					v->brzina-=0.25f;
-					if (v->brzina<0.03) v->brzina=0;
-					v->vrijeme=v->brzina/(maxBrzina-v->brzina);
+					v->brzina-=40;
 				}
 					
 				if (v->brzina < 0){
-					v->brzina+=0.25f;
+					v->brzina+=40;
 				}
 				std::cout << "brzinaSfF = " << v -> brzina << std::endl;
-				std::cout << "brzinaSfF time  = " << v -> vrijeme << std::endl;
-					vmt->preMult(osg::Matrix::translate(0,-(v->brzina),0));				
-			}			
+					vmt->preMult(osg::Matrix::translate(0,-(v->brzina)/100,0));
+				
+			}
+		
+			
+			
 			if ((voziloInputDeviceState->rotLReq)&&(v->brzina>skretanjeLimit))
 			{
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanja),osg::Z_AXIS));
 			}
 			if ((voziloInputDeviceState->rotRReq)&&(v->brzina>skretanjeLimit))
+
 			{
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanja),osg::Z_AXIS));
 			}
 
 			if ((voziloInputDeviceState->rotRReq)&&(v->brzina<-skretanjeLimit))
+
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanja),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanjaR),osg::Z_AXIS));
 			}
 			if ((voziloInputDeviceState->rotLReq)&&(v->brzina<-skretanjeLimit))
+
 			{
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanja),osg::Z_AXIS));
+				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanjaR),osg::Z_AXIS));
 			}
 			
-			//Detekcija kolizije, koristi kvadre
-			b1=vmt->getBound();
-			//std::cout << "Centar vozila: " << b1.center().x() << "," << b1.center().y() << "," << b1.center().z() << "  Radius vozila: " << b1.radius();
-			//std::cout << "Centar zgrade: " << b2.center().x() << "," << b2.center().y() << "," << b2.center().z() << "  Radius zgrade: " << b2.radius();
-			//Postavljanje dimanzija bounding boxa vozila
-			boxVozilo.init(); //Èišæenje prethodnih podataka
-			boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-				b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kockeu kvadar
-			//Postavljanje dimanzija bounding boxa zgrade
-			boxZgrada.init(); //Èišæenje prethodnih podataka
-			boxZgrada.set(b2.center().x()+zgX1, b2.center().y()+zgY1, b2.center().z()+zgZ1,
-			b2.center().x()+zgX2, b2.center().y()+zgY2, b2.center().z()+zgZ2);
-
-			if(boxVozilo.intersects(boxZgrada))
-			{
-				std::cout << "Collision" << std::endl;
-				vmt->preMult(osg::Matrix::translate(0,(v -> brzina),0));
-				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.2f),osg::Z_AXIS));
-				v->brzina=0;
-			}
-
 			if(voziloInputDeviceState->promijeniModel == 1) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1_mod.3DS")); 
 				voziloInputDeviceState->promijeniModel = 0;
-				dimX1= -vmt->getBound().radius()*0.42f; //omjeri dimenzija vozila
-				dimX2= vmt->getBound().radius()*0.42f;
-				dimY1= -vmt->getBound().radius()*0.95f;
-				dimY2= vmt->getBound().radius()*0.95f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
 			}
-			else if (voziloInputDeviceState->promijeniModel == 2) {
+			else if (voziloInputDeviceState->promijeniModel == 2){
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
 				voziloInputDeviceState->promijeniModel = 0;
-				dimX1= -vmt->getBound().radius()*0.45f;
-				dimX2= vmt->getBound().radius()*0.45f;
-				dimY1= -vmt->getBound().radius()*0.93f;
-				dimY2= vmt->getBound().radius()*0.93f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
 			}
-			else if (voziloInputDeviceState->promijeniModel == 3) {
-				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/kork_take2.IVE")); 
-				voziloInputDeviceState->promijeniModel = 0;
-				dimX1= -vmt->getBound().radius()*0.45f;
-				dimX2= vmt->getBound().radius()*0.45f;
-				dimY1= -vmt->getBound().radius()*0.93f;
-				dimY2= vmt->getBound().radius()*0.93f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
-			}
+
+		//osg::BoundingSphere b1=vmt->getBound();
+		//if(b1.intersects(b2)) std::cout << "Collision" << std::endl;
+		//else std::cout << "No Collision" << std::endl;
+		////float r1 = b1.radius();		
+		////float r2 = b2.radius();
+		////osg::Vec3 c1 = b1.center();
+		////osg::Vec3 c2 = b2.center();
+		////std::cout <<"radius1 = "<< r1 <<" centar1 = "<< c1 <<std::endl;
+		////std::cout <<"radius2 = "<< r2 <<" centar2 = "<< c2 <<std::endl;
 
 		}
 	}
@@ -660,7 +591,7 @@ int main (int argc, char * argv[])
 	//arTB, sample1
 	osg::ref_ptr<osg::MatrixTransform> arTB = new osg::MatrixTransform();
 	osgART::attachDefaultEventCallbacks(arTB,markerB);
-	arTB->addChild(osgDB::readNodeFile("../../Modeli/guma.IVE"));
+	arTB->addChild(osgDB::readNodeFile("../../Modeli/reklama.IVE"));
 	arTB->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
 	//arTC, sample2
@@ -696,14 +627,14 @@ int main (int argc, char * argv[])
 	Vozilo* v = new Vozilo("../../Modeli/fermula_kork.3DS");
 	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 	tran_fer->addChild(v->Model);
-	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,-170,10)));
+	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,-150,10)));
 	//update kontrola
 	//tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v));
 	tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v,zg_fer));
 	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState, v);
 	viewer.addEventHandler(voziloEventHandler);
 	multiTrans->addChild(tran_fer);
-	osg::ref_ptr<osg::MatrixTransform> tr_ces = new osg::MatrixTransform(osg::Matrix::translate(osg::Vec3(0,-170,0)));
+	osg::ref_ptr<osg::MatrixTransform> tr_ces = new osg::MatrixTransform(osg::Matrix::translate(osg::Vec3(0,-150,0)));
 	tr_ces->preMult(osg::Matrix::scale(osg::Vec3(1,0.5,1)));
 	tr_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
 	multiTrans->addChild(tr_ces);
@@ -711,6 +642,7 @@ int main (int argc, char * argv[])
 	//osg::ref_ptr<osg::Group> mod_ces= new osg::Group();
 	//mod_ces->addChild(tran_fer);
 	//mod_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
+
 
 	////switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
 	//osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
