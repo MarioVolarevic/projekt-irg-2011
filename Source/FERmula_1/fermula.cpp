@@ -111,7 +111,7 @@ class Vozilo
 {
 public:
 	osg::Node* Model;
-	int brzina;
+	float brzina;
 	float vrijeme;
 	int okrenutL;
 	int okrenutD;
@@ -120,7 +120,7 @@ public:
 		Model = osgDB::readNodeFile(ime_mod);
 		okrenutL = 0;
 		okrenutD = 0;
-		brzina = 0;
+		brzina = 0.f;
 		vrijeme = 0.f;
 	}
 	//Model = osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
@@ -471,6 +471,7 @@ public:
 			if(boxVozilo.intersects(boxZgrada))
 			{
 				std::cout << "Collision" << std::endl;
+
 				vmt->preMult(osg::Matrix::translate(0,(v -> brzina),0));
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.2f),osg::Z_AXIS));
 				v->brzina=0;
