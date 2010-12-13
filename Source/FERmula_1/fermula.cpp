@@ -23,6 +23,8 @@
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
 
+#define br_markera 4
+
 const float kutZakretanja=6;
 const float skretanjeLimit=0.4;
 const int maxBrzina=20;
@@ -478,7 +480,7 @@ public:
 			}
 
 			if(voziloInputDeviceState->promijeniModel == 1) {
-				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1_mod.3DS")); 
+				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
 				dimX1= -vmt->getBound().radius()*0.42f; //omjeri dimenzija vozila
 				dimX2= vmt->getBound().radius()*0.42f;
@@ -488,14 +490,14 @@ public:
 				dimZ2= vmt->getBound().radius()*0.333f;
 			}
 			else if (voziloInputDeviceState->promijeniModel == 2) {
-				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
-				voziloInputDeviceState->promijeniModel = 0;
-				dimX1= -vmt->getBound().radius()*0.45f;
-				dimX2= vmt->getBound().radius()*0.45f;
-				dimY1= -vmt->getBound().radius()*0.93f;
-				dimY2= vmt->getBound().radius()*0.93f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
+				//vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
+				//voziloInputDeviceState->promijeniModel = 0;
+				//dimX1= -vmt->getBound().radius()*0.45f;
+				//dimX2= vmt->getBound().radius()*0.45f;
+				//dimY1= -vmt->getBound().radius()*0.93f;
+				//dimY2= vmt->getBound().radius()*0.93f;
+				//dimZ1= -vmt->getBound().radius()*0.333f;
+				//dimZ2= vmt->getBound().radius()*0.333f;
 			}
 			else if (voziloInputDeviceState->promijeniModel == 3) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/kork_take2.IVE")); 
@@ -600,43 +602,18 @@ int main (int argc, char * argv[])
 	//camera calibration
 	osg::ref_ptr<osg::Camera> cam = calibration->createCamera();
 
+	//polje markera
+	osg::ref_ptr<osgART::Marker> marker[br_markera];
 	//markerA
-	osg::ref_ptr<osgART::Marker> markerA = tracker->addMarker("single;data/patt.kanji;80;0;0");
-	if (!markerA.valid()) 
-	{
-		// Without marker an AR application can not work. Quit if none found.
-		osg::notify(osg::FATAL) << "Could not add marker!" << std::endl;
-		exit(-1);
-	}
-	markerA->setActive(true);
-
+	marker[0] = tracker->addMarker("single;data/patt.kanji;80;0;0");
 	//markerB
-	osg::ref_ptr<osgART::Marker> markerB = tracker->addMarker("single;data/patt.sample1;80;0;0");
-	if (!markerB.valid()) 
-	{
-		// Without marker an AR application can not work. Quit if none found.
-		osg::notify(osg::FATAL) << "Could not add marker!" << std::endl;
-		exit(-1);
-	}
-	markerB->setActive(true);
-
+	marker[1] = tracker->addMarker("single;data/patt.sample1;80;0;0");
 	//markerC
-	osg::ref_ptr<osgART::Marker> markerC = tracker->addMarker("single;data/patt.sample2;80;0;0");
-	if (!markerC.valid())
-	{
-		osg::notify(osg::FATAL) << "Could not add marker!" << std::endl;
-		exit(-1);
-	}
-	markerC->setActive(true);
-
+	marker[2]= tracker->addMarker("single;data/patt.sample2;80;0;0");
 	//markerD
-	osg::ref_ptr<osgART::Marker> markerD = tracker->addMarker("single;data/armedia.patt;10;0;0");
-	if (!markerD.valid())
-	{
-		osg::notify(osg::FATAL) << "Could not add marker!" << std::endl;
-		exit(-1);
-	}
-	markerD->setActive(true);
+	marker[3] = tracker->addMarker("single;data/armedia.patt;10;0;0");
+	for (int i=0;i<br_markera; i++)
+		marker[i]->setActive(true);
 
 	//multimarker: zgrada fera i trava
 	osg::ref_ptr<osgART::Marker> markerMult = tracker->addMarker("multi;data/multi/marker_list.dat;60;0;0");
@@ -651,37 +628,25 @@ int main (int argc, char * argv[])
 	osg::ref_ptr<osg::Group> videoBackground = createImageBackground(video.get());
 	videoBackground->getOrCreateStateSet()->setRenderBinDetails(0, "RenderBin");
 
+	//inicijalizacija transformacija i povezivanje s markerom
+	osg::ref_ptr<osg::MatrixTransform> arT[br_markera];
+	for (int i = 0; i < br_markera; i++)
+	{
+		arT[i] = new osg::MatrixTransform();
+		osgART::attachDefaultEventCallbacks(arT[i],marker[i]);
+		arT[i]->getOrCreateStateSet()->setRenderBinDetails(100, "RenderBin");
+	}
+
 	//arTA, kanjii
-	osg::ref_ptr<osg::MatrixTransform> arTA = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTA.get(),markerA.get());
+	arT[0]->addChild(osgDB::readNodeFile("../../Modeli/snjegovic.IVE"));
 	//osgART::addEventCallback(arTA.get(), new osgART::MarkerTransformCallback(markerA));
 	//osgART::addEventCallback(arTA.get(), new MyMarkerVisibilityCallback(markerA));
-	arTA->getOrCreateStateSet()->setRenderBinDetails(100, "RenderBin");
-
 	//arTB, sample1
-	osg::ref_ptr<osg::MatrixTransform> arTB = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTB,markerB);
-	arTB->addChild(osgDB::readNodeFile("../../Modeli/guma.IVE"));
-	arTB->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
-
+	arT[1]->addChild(osgDB::readNodeFile("../../Modeli/reklama.IVE"));
 	//arTC, sample2
-	osg::ref_ptr<osg::MatrixTransform> arTC = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTC,markerC);
-	arTC->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
-	arTC->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
-
+	arT[2]->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
 	//arTD, armedia
-	osg::ref_ptr<osg::MatrixTransform> arTD = new osg::MatrixTransform();
-	osgART::attachDefaultEventCallbacks(arTD,markerD);
-	arTD->addChild(osgDB::readNodeFile("../../Modeli/klupa_drvo.IVE"));
-	arTD->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
-	//const	osg::BoundingSphere &bs1 = arTD->getBound();
-	//const	osg::BoundingSphere &bs2 = arTC->getBound();
-	//float r1 = bs1.radius();
-	//float r2 = bs2.radius();
-
-	//std::cout <<"radius1 = "<< r1 <<std::endl;
-	//std::cout <<"radius2 = "<< r2 <<std::endl;
+	arT[3]->addChild(osgDB::readNodeFile("../../Modeli/klupa_drvo.IVE"));
 
 	//arTMulti
 	osg::ref_ptr<osg::MatrixTransform> multiTrans = new osg::MatrixTransform();
@@ -694,7 +659,7 @@ int main (int argc, char * argv[])
 
 	//pocetno podesavanje modela
 	VoziloInputDeviceStateType* vIDevState = new VoziloInputDeviceStateType;
-	Vozilo* v = new Vozilo("../../Modeli/fermula_kork.3DS");
+	Vozilo* v = new Vozilo("../../Modeli/ana_f1.IVE");
 	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 	tran_fer->addChild(v->Model);
 	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,-170,10)));
@@ -723,10 +688,9 @@ int main (int argc, char * argv[])
 
 	//cam->setUpdateCallback(new CollisionTestCallback(tran_fer, zg_fer));
 
-	cam->addChild(arTA);
-	cam->addChild(arTB);
-	cam->addChild(arTC);
-	cam->addChild(arTD);
+	for (int i = 0; i<br_markera;i++)
+		cam->addChild(arT[i]);
+
 	cam->addChild(multiTrans);
 	cam->addChild(videoBackground.get());
 	root->addChild(cam.get());
