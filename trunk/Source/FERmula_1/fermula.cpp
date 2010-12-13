@@ -490,14 +490,14 @@ public:
 				dimZ2= vmt->getBound().radius()*0.333f;
 			}
 			else if (voziloInputDeviceState->promijeniModel == 2) {
-				//vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/fermula_kork.3DS")); 
-				//voziloInputDeviceState->promijeniModel = 0;
-				//dimX1= -vmt->getBound().radius()*0.45f;
-				//dimX2= vmt->getBound().radius()*0.45f;
-				//dimY1= -vmt->getBound().radius()*0.93f;
-				//dimY2= vmt->getBound().radius()*0.93f;
-				//dimZ1= -vmt->getBound().radius()*0.333f;
-				//dimZ2= vmt->getBound().radius()*0.333f;
+				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/mrki_ferm.IVE")); 
+				voziloInputDeviceState->promijeniModel = 0;
+				dimX1= -vmt->getBound().radius()*0.45f;
+				dimX2= vmt->getBound().radius()*0.45f;
+				dimY1= -vmt->getBound().radius()*0.93f;
+				dimY2= vmt->getBound().radius()*0.93f;
+				dimZ1= -vmt->getBound().radius()*0.333f;
+				dimZ2= vmt->getBound().radius()*0.333f;
 			}
 			else if (voziloInputDeviceState->promijeniModel == 3) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/kork_take2.IVE")); 
@@ -653,7 +653,7 @@ int main (int argc, char * argv[])
 	osgART::attachDefaultEventCallbacks(multiTrans, markerMult);
 	osg::ref_ptr<osg::MatrixTransform> zg_fer = new osg::MatrixTransform();
 	//zg_fer->addChild(osgDB::readNodeFile("../../Modeli/fer_zgrada_scale.3DS"));
-	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_nema_spoja.IVE"));
+	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_gume_spojeno.IVE"));
 	multiTrans->addChild(zg_fer);
 	multiTrans->getOrCreateStateSet()->setRenderBinDetails(100,"RenderBin");
 
