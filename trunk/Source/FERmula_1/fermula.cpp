@@ -449,8 +449,8 @@ public:
 		//		 isto se odnosi i na onaj dio kod izbora vozila
 		zgX1[0]= -b2[0].radius()*0.6f;	//omjeri dimenzija abc_zgrade
 		zgX2[0]= b2[0].radius()*0.79f;
-		zgY1[0]= -b2[0].radius()*0.23f;
-		zgY2[0]= b2[0].radius()*0.23f;
+		zgY1[0]= -b2[0].radius()*0.2f;
+		zgY2[0]= b2[0].radius()*0.2f;
 		zgZ1[0]= -b2[0].radius()*0.5f;
 		zgZ2[0]= b2[0].radius()*0.5f;
 		zgX1[1]= -b2[1].radius()*0.34f;	//omjeri dimenzija d_zgrade
@@ -568,11 +568,6 @@ public:
 			//Detekcija kolizije, koristi kvadre
 			//std::cout << "Centar vozila: " << b1.center().x() << "," << b1.center().y() << "," << b1.center().z() << "  Radius vozila: " << b1.radius();
 			//std::cout << "Centar zgrade: " << b2.center().x() << "," << b2.center().y() << "," << b2.center().z() << "  Radius zgrade: " << b2.radius();
-			//Postavljanje dimanzija bounding boxa vozila i osvjezavanje pozicije
-			b1=vmt->getBound();
-			boxVozilo.init(); //Èišæenje prethodnih podataka
-			boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-				b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
 			if (init == true)
 			{
 				dimX1= -vmt->getBound().radius()*0.42f; //omjeri dimenzija vozila aninog modela
@@ -586,14 +581,14 @@ public:
 				boxVozilo.init(); //Èišæenje prethodnih podataka
 				boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
 					b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
-
-				//Postavljanje dimanzija bounding boxa vozila
-				b1=vmt->getBound();
-				boxVozilo.init(); //Èišæenje prethodnih podataka
-				boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-					b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
 				init = false;
 			}
+			//Postavljanje dimanzija bounding boxa vozila i osvjezavanje pozicije
+			b1=vmt->getBound();
+			boxVozilo.init(); //Èišæenje prethodnih podataka
+			boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
+				b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
+
 			if (v->brzina != 0)
 			{
 				//Postavljanje dimanzija bounding boxa za svaku zgradu i provjera kolizije sa zgradama
