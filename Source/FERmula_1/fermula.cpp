@@ -13,6 +13,7 @@
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 
+#include <osg/ComputeBoundsVisitor>
 #include <osg/GraphicsContext>
 #include <osg/positionattitudetransform>
 #include <osg/matrixtransform>
@@ -443,7 +444,6 @@ public:
 		abc_zg = FindNodeByName(n1,"zid_G");
 		a1 = AddMatrixTransform(abc_zg);
 		b2[4] = a1->getBound();
-
 		//TO DO: Ako netko zna neka ovaj segment koda sredi tako da se parametri
 		//		 omjera uèitavaju iz datoteke (one ne treba kompajlirati za svaku preinaku)
 		//		 isto se odnosi i na onaj dio kod izbora vozila
@@ -584,10 +584,17 @@ public:
 				init = false;
 			}
 			//Postavljanje dimanzija bounding boxa vozila i osvjezavanje pozicije
-			b1=vmt->getBound();
-			boxVozilo.init(); //Èišæenje prethodnih podataka
-			boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-				b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
+			osg::ComputeBoundsVisitor cbbv; 
+			vmt->accept(cbbv); 
+			boxVozilo.init();
+			boxVozilo = cbbv.getBoundingBox();
+
+			//osg::Vec3 size = bb._max - bb._min; 		
+			//b1=vmt->getBound();
+			//boxVozilo.init(); //Èišæenje prethodnih podataka
+			//boxVozilo.set(
+			//boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
+			//	b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
 
 			if (v->brzina != 0)
 			{
