@@ -159,6 +159,19 @@ public:
 
 
 /************************KEYBOARD HANDLER FOR HUD*****************/
+osgText::Text* brzina=new osgText::Text();
+osg::Geode* HUDBrzina=new osg::Geode();
+/*************************ISPIS BRZINE********************************/
+void ispisBrzina(Vozilo* fermula){
+	std::string brz;
+	char b[5];
+	itoa(fermula->brzina,b,10);
+	brz.append(b);
+	brz.append(" km/s");
+	brzina->setText("Brzina: "+brz);
+	return;
+}
+/******************************************************/
 class KeyboardHandlerForHUD : public osgGA::GUIEventHandler{
 public:
 	KeyboardHandlerForHUD(osg::Geode* geode,osgText::Text* text,Vozilo* fermula,osg::Group* root)
@@ -185,17 +198,14 @@ bool KeyboardHandlerForHUD::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIAc
 			//std::cout<<_fermula->brzina;
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
-			break;
 		case 'p':
 			_text->setText("help: \n<o> back to game\n<c> see controls\n<y> or <x> change model\n<b> show/hide speed");
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
-			break;
 		case 'c':
 			_text->setText("Controls:\n<ARROW_UP> forward\n<ARROW_DOWN> back\n<ARROW_LEFT> left\n<ARROW_RIGHT> right");
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
-			break;
 		case 'y':
 			i=(i+1)%n;
 			//_root->setChild(1,_fermula->Model=osgDB::readNodeFile(model[i]));
@@ -203,14 +213,15 @@ bool KeyboardHandlerForHUD::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIAc
 			_text->setPosition(osg::Vec3(10,350,-1));
 			//optimizer.optimize(_fermula);
 			return false;
-			break;
 		case 'x':
 			i=abs((i-1)%n);
 			//_root->setChild(1,_fermula->Model=osgDB::readNodeFile(model[i]));
 			_text->setText("Model: "+model[i]);
 			_text->setPosition(osg::Vec3(10,350,-1));
 			return false;
-			break;
+		case 'b':
+			HUDBrzina->setNodeMask(0xffffffff - HUDBrzina->getNodeMask());
+			return false;
 		default:
 			return false;
 			}
@@ -634,6 +645,7 @@ public:
 			}
 
 		}
+		ispisBrzina(v);
 	}
 };
 
@@ -906,9 +918,7 @@ int main (int argc, char * argv[])
 	itoa(i,b,10);
 	brz.append(b);
 	brz.append(" km/s");
-	osg::Geode* HUDBrzina=new osg::Geode();
 	HUDModelViewMatrix->addChild(HUDBrzina);
-	osgText::Text* brzina=new osgText::Text();
 	brzina->setColor(osg::Vec4(1,0,0,1));
 	brzina->setCharacterSize(30);
 	brzina->setFont("sfdr.ttf");
@@ -916,6 +926,7 @@ int main (int argc, char * argv[])
 	brzina->setPosition(osg::Vec3(800,740,-1));
 	HUDBrzina->addDrawable(brzina);
 	HUDGeode->setNodeMask(0);
+	ispisBrzina(v);
 
 
 	/**********************************/
