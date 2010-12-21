@@ -24,9 +24,9 @@
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
 
-#define br_markera 13
+#define br_markera 16
 
-const float kutZakretanja=6;
+ float kutZakretanja=6;
 const float skretanjeLimit=0.4;
 const int maxBrzina=20;
 const int maxBrzinaR=4;
@@ -449,14 +449,14 @@ public:
 		//		 isto se odnosi i na onaj dio kod izbora vozila
 		zgX1[0]= -b2[0].radius()*0.6f;	//omjeri dimenzija abc_zgrade
 		zgX2[0]= b2[0].radius()*0.79f;
-		zgY1[0]= -b2[0].radius()*0.2f;
-		zgY2[0]= b2[0].radius()*0.2f;
+		zgY1[0]= -b2[0].radius()*0.23f;
+		zgY2[0]= b2[0].radius()*0.25f;
 		zgZ1[0]= -b2[0].radius()*0.5f;
 		zgZ2[0]= b2[0].radius()*0.5f;
 		zgX1[1]= -b2[1].radius()*0.34f;	//omjeri dimenzija d_zgrade
 		zgX2[1]= b2[1].radius()*0.35f;
-		zgY1[1]= -b2[1].radius()*0.38f;
-		zgY2[1]= b2[1].radius()*0.5f;
+		zgY1[1]= -b2[1].radius()*0.535f;
+		zgY2[1]= b2[1].radius()*0.7f;
 		zgZ1[1]= -b2[1].radius()*0.5f;
 		zgZ2[1]= b2[1].radius()*0.5f;
 		zgX1[2]= -b2[2].radius()*0.07f;	//omjeri dimenzija zid_D
@@ -473,10 +473,10 @@ public:
 		zgZ2[3]= b2[3].radius()*0.1f;
 		zgX1[4]= -b2[4].radius()*0.99f;	//omjeri dimenzija zid_G
 		zgX2[4]= b2[4].radius()*0.99f;
-		zgY1[4]= -b2[4].radius()*0.05f;
-		zgY2[4]= -b2[4].radius()*0.01f;
+		zgY1[4]= -b2[4].radius()*0.1f; 
+		zgY2[4]= b2[4].radius()*0.1f; 
 		zgZ1[4]= -b2[4].radius()*0.1f;
-		zgZ2[4]= b2[4].radius()*0.1f;
+		zgZ2[4]= b2[4].radius()*0.2f;
 
 	}
 	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
@@ -487,7 +487,7 @@ public:
 			if (voziloInputDeviceState->resetReq)
 			{   
 				vmt->setMatrix(osg::Matrix::identity());
-				vmt->preMult(osg::Matrix::translate(osg::Vec3(0,-170,10)));
+				vmt->preMult(osg::Matrix::translate(osg::Vec3(150,-250,0)));
 				v->brzina=0;
 				v->vrijeme=0;
 			}
@@ -568,36 +568,36 @@ public:
 			//Detekcija kolizije, koristi kvadre
 			//std::cout << "Centar vozila: " << b1.center().x() << "," << b1.center().y() << "," << b1.center().z() << "  Radius vozila: " << b1.radius();
 			//std::cout << "Centar zgrade: " << b2.center().x() << "," << b2.center().y() << "," << b2.center().z() << "  Radius zgrade: " << b2.radius();
-			if (init == true)
-			{
-				dimX1= -vmt->getBound().radius()*0.42f; //omjeri dimenzija vozila aninog modela
-				dimX2= vmt->getBound().radius()*0.42f;
-				dimY1= -vmt->getBound().radius()*1.95f;
-				dimY2= vmt->getBound().radius()*1.95f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
-				//Postavljanje dimanzija bounding boxa vozila
-				b1=vmt->getBound();
-				boxVozilo.init(); //Èišæenje prethodnih podataka
-				boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-					b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
-				init = false;
-			}
+			//if (init == true)
+			//{
+			//	dimX1= -vmt->getBound().radius()*0.42f; //omjeri dimenzija vozila aninog modela
+			//	dimX2= vmt->getBound().radius()*0.42f;
+			//	dimY1= -vmt->getBound().radius()*1.95f;
+			//	dimY2= vmt->getBound().radius()*1.95f;
+			//	dimZ1= -vmt->getBound().radius()*0.333f;
+			//	dimZ2= vmt->getBound().radius()*0.333f;
+			//	//Postavljanje dimanzija bounding boxa vozila
+			//	b1=vmt->getBound();
+			//	boxVozilo.init(); //Èišæenje prethodnih podataka
+			//	boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
+			//		b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
+			//	init = false;
+			//}
 			//Postavljanje dimanzija bounding boxa vozila i osvjezavanje pozicije
-			osg::ComputeBoundsVisitor cbbv; 
-			vmt->accept(cbbv); 
-			boxVozilo.init();
-			boxVozilo = cbbv.getBoundingBox();
 
-			//osg::Vec3 size = bb._max - bb._min; 		
 			//b1=vmt->getBound();
 			//boxVozilo.init(); //Èišæenje prethodnih podataka
 			//boxVozilo.set(
 			//boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
 			//	b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
+			osg::ComputeBoundsVisitor cbbv; 
+			vmt->accept(cbbv); 
+			boxVozilo.init();
+			boxVozilo = cbbv.getBoundingBox();
 
 			if (v->brzina != 0)
 			{
+				kutZakretanja = 6;
 				//Postavljanje dimanzija bounding boxa za svaku zgradu i provjera kolizije sa zgradama
 				for(int k=0; k<BR_EL_ZGRADE; k++)
 				{
@@ -610,63 +610,27 @@ public:
 						//std::cout << "Collision" << std::endl;
 
 						vmt->preMult(osg::Matrix::translate(0,(v -> brzina),0));
-						//vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-1.2f),osg::Z_AXIS));
+						//vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanja),osg::Z_AXIS));
 						v->brzina=0;
 						v->vrijeme=0;
+						kutZakretanja = 0;
 					}
 				}
 			}
 			if(voziloInputDeviceState->promijeniModel == 1) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
-				std::cout << "radiusAna = " << vmt->getBound().radius() <<std::endl;
-				dimX1= -vmt->getBound().radius()*0.42f; //omjeri dimenzija vozila
-				dimX2= vmt->getBound().radius()*0.42f;
-				dimY1= -vmt->getBound().radius()*1.95f;
-				dimY2= vmt->getBound().radius()*1.95f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
-				//Postavljanje dimanzija bounding boxa vozila
-				b1=vmt->getBound();
-				boxVozilo.init(); //Èišæenje prethodnih podataka
-				boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-					b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
 
 
 			}
 			else if (voziloInputDeviceState->promijeniModel == 2) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/mrki_ferm.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
-				std::cout << "radiusMrki = " << vmt->getBound().radius() <<std::endl;
-				dimX1= -vmt->getBound().radius()*0.45f;
-				dimX2= vmt->getBound().radius()*0.45f;
-				dimY1= -vmt->getBound().radius()*1.93f;
-				dimY2= vmt->getBound().radius()*1.93f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
-				//Postavljanje dimanzija bounding boxa vozila
-				b1=vmt->getBound();
-				boxVozilo.init(); //Èišæenje prethodnih podataka
-				boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-					b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
 
 			}
 			else if (voziloInputDeviceState->promijeniModel == 3) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/kork_take2.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
-				std::cout << "radiusKork = " << vmt->getBound().radius() <<std::endl;
-				dimX1= -vmt->getBound().radius()*0.45f;
-				dimX2= vmt->getBound().radius()*0.45f;
-				dimY1= -vmt->getBound().radius()*0.90f;
-				dimY2= vmt->getBound().radius()*0.93f;
-				dimZ1= -vmt->getBound().radius()*0.333f;
-				dimZ2= vmt->getBound().radius()*0.333f;
-				//Postavljanje dimanzija bounding boxa vozila
-				b1=vmt->getBound();
-				boxVozilo.init(); //Èišæenje prethodnih podataka
-				boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-					b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
-
 			}
 
 		}
@@ -750,7 +714,7 @@ int main (int argc, char * argv[])
 
 
 	// load camera calibration file
-	if (!calibration->load(std::string("data/camera_para.dat"))) 
+	if (!calibration->load(std::string("data/log_calib_para.dat"))) 
 	{
 
 		// the calibration file was non-existing or couldnt be loaded
@@ -763,23 +727,22 @@ int main (int argc, char * argv[])
 
 	//polje markera
 	osg::ref_ptr<osgART::Marker> marker[br_markera];
-	//markerA
-	marker[0] = tracker->addMarker("single;data/patt.kanji;80;0;0");
-	//markerB
-	marker[1] = tracker->addMarker("single;data/patt.sample1;80;0;0");
-	//markerC
-	marker[2]= tracker->addMarker("single;data/patt.sample2;80;0;0");
-	//markerD
-	marker[3] = tracker->addMarker("single;data/armedia.patt;10;0;0");
-	marker[4] = tracker->addMarker("single;data/ca.p;60;0;0");
-	marker[5] = tracker->addMarker("single;data/cb.p;60;0;0");
-	marker[6] = tracker->addMarker("single;data/cc.p;60;0;0");
-	marker[7] = tracker->addMarker("single;data/za.p;60;0;0");
-	marker[8] = tracker->addMarker("single;data/zb.p;60;0;0");
-	marker[9] = tracker->addMarker("single;data/zc.p;60;0;0");
+	marker[0] = tracker->addMarker("single;data/ca.p;60;0;0");
+	marker[1] = tracker->addMarker("single;data/cb.p;60;0;0");
+	marker[2] = tracker->addMarker("single;data/cc.p;60;0;0");
+	marker[3] = tracker->addMarker("single;data/cd.p;60;0;0");
+	marker[4] = tracker->addMarker("single;data/ce.p;60;0;0");
+	marker[5] = tracker->addMarker("single;data/za.p;60;0;0");
+	marker[6] = tracker->addMarker("single;data/zb.p;60;0;0");
+	marker[7] = tracker->addMarker("single;data/zc.p;60;0;0");
+	marker[8] = tracker->addMarker("single;data/zd.p;60;0;0");
+	marker[9] = tracker->addMarker("single;data/ze.p;60;0;0");
 	marker[10] = tracker->addMarker("single;data/oa.p;60;0;0");
 	marker[11] = tracker->addMarker("single;data/ob.p;60;0;0");
 	marker[12] = tracker->addMarker("single;data/oc.p;60;0;0");
+	marker[13] = tracker->addMarker("single;data/od.p;60;0;0");
+	marker[14] = tracker->addMarker("single;data/oe.p;60;0;0");
+	marker[15] = tracker->addMarker("single;data/of.p;60;0;0");
 
 	//aktiviranje markera
 	for (int i=0;i<br_markera; i++)
@@ -804,35 +767,18 @@ int main (int argc, char * argv[])
 	{
 		arT[i] = new osg::MatrixTransform();
 		osgART::attachDefaultEventCallbacks(arT[i],marker[i]);
-		arT[i]->getOrCreateStateSet()->setRenderBinDetails(90, "RenderBin");
+		arT[i]->getOrCreateStateSet()->setRenderBinDetails(300, "RenderBin");
 	}
+	for (int i = 0; i<10;i++){
+		if (i<6) arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.IVE"));
+		else arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.IVE"));}
 
-	//arTA, kanjii
-	arT[0]->addChild(osgDB::readNodeFile("../../Modeli/snjegovic.IVE"));
-	//osgART::addEventCallback(arTA.get(), new osgART::MarkerTransformCallback(markerA));
-	//osgART::addEventCallback(arTA.get(), new MyMarkerVisibilityCallback(markerA));
-	//arTB, sample1
-	//arT[1]->addChild(osgDB::readNodeFile("../../Modeli/reklama.IVE"));
-	//arTC, sample2
-	//arT[2]->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
-	//arTD, armedia
-	arT[3]->addChild(osgDB::readNodeFile("../../Modeli/klupa_drvo.IVE"));
-
-	for (int i = 4; i<10;i++)
-		if (i<7) arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.IVE"));
-		else arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.IVE"));
-	//osg::ref_ptr<osg::MatrixTransform> rekl = new osg::MatrixTransform();
-	//rekl->addChild(osgDB::readNodeFile("../../Modeli/reklama.IVE"));
-	//rekl->preMult(osg::Matrix::scale(osg::Vec3(1.6,1.6,1.6)));
 	arT[10]->addChild(osgDB::readNodeFile("../../Modeli/reklama.IVE"));
-	//osg::ref_ptr<osg::MatrixTransform> kuc_drv = new osg::MatrixTransform();
-	//kuc_drv->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
-	//kuc_drv->preMult(osg::Matrix::scale(osg::Vec3(0.5,0.5,0.5)));
-	arT[11]->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
-	//osg::ref_ptr<osg::MatrixTransform> klup_dr = new osg::MatrixTransform();
-	//klup_dr->addChild(osgDB::readNodeFile("../../Modeli/klupa_drvo.IVE"));
-	//klup_dr->preMult(osg::Matrix::scale(osg::Vec3(3,3,3)));
+	arT[11]->addChild(osgDB::readNodeFile("../../Modeli/snjegovic.IVE"));
 	arT[12]->addChild(osgDB::readNodeFile("../../Modeli/klupa_drvo.IVE"));
+	arT[13]->addChild(osgDB::readNodeFile("../../Modeli/rekl3.IVE"));
+	arT[14]->addChild(osgDB::readNodeFile("../../Modeli/rekl2.IVE"));
+	arT[15]->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
 
 	//arTMulti
 	osg::ref_ptr<osg::MatrixTransform> multiTrans = new osg::MatrixTransform();
@@ -840,17 +786,24 @@ int main (int argc, char * argv[])
 	osg::ref_ptr<osg::MatrixTransform> zg_fer = new osg::MatrixTransform();
 	//zg_fer->addChild(osgDB::readNodeFile("../../Modeli/fer_zgrada_scale.3DS"));
 	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_gume_spojeno.IVE"));
-	zg_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,-10)));
+	//zg_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,0)));
 	multiTrans->addChild(zg_fer);
-	multiTrans->getOrCreateStateSet()->setRenderBinDetails(15,"RenderBin");
+	osg::ref_ptr<osg::MatrixTransform> tlo = new osg::MatrixTransform();
+	tlo->addChild(osgDB::readNodeFile("../../Modeli/tlo.IVE"));
+	//osg::ref_ptr<osg::StateSet> st_tlo = tlo->getOrCreateStateSet();
+	tlo->preMult(osg::Matrix::translate(osg::Vec3(0,0,-30)));
+	//st_tlo->setMode(GL_DEPTH_TEST,osg::StateAttribute::OFF);
+	//st_tlo->setRenderBinDetails(500,"RenderBin");
+	multiTrans->addChild(tlo);
+	multiTrans->getOrCreateStateSet()->setRenderBinDetails(50,"RenderBin");
 
 	//pocetno podesavanje modela
 	VoziloInputDeviceStateType* vIDevState = new VoziloInputDeviceStateType;
 	Vozilo* v = new Vozilo("../../Modeli/ana_f1.IVE");
 	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 	tran_fer->addChild(v->Model);
-	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(0,-170,10)));
-	tran_fer->getOrCreateStateSet()->setRenderBinDetails(150,"RenderBin");
+	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(150,-250,0)));
+	//tran_fer->getOrCreateStateSet()->setRenderBinDetails(150,"RenderBin");
 	//update kontrola
 	//tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v));
 	tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v,zg_fer));
