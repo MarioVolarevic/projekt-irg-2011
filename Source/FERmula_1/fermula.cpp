@@ -165,7 +165,7 @@ osg::Geode* HUDBrzina=new osg::Geode();
 void ispisBrzina(Vozilo* fermula){
 	std::string brz;
 	char b[5];
-	itoa(fermula->brzina,b,10);
+	itoa(fermula->brzina*2,b,10);
 	brz.append(b);
 	brz.append(" km/s");
 	brzina->setText("Brzina: "+brz);
@@ -185,9 +185,6 @@ private:
 };
 
 bool KeyboardHandlerForHUD::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter&){
-	const int n=2;
-	std::string model[n]={"fermula_kork.3DS","ana_f1_mod.3DS"};
-	static int i=0;
 	osgText::Text* options=new osgText::Text();
 	switch(ea.getEventType()){
 		case(osgGA::GUIEventAdapter::KEYDOWN):{
@@ -199,35 +196,23 @@ bool KeyboardHandlerForHUD::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIAc
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
 		case 'p':
-			_text->setText("help: \n<o> back to game\n<c> see controls\n<y> or <x> change model\n<b> show/hide speed");
+			_text->setText("help: \n<o> back to game\n<n> see controls\n<m> see models\n<b> show/hide speed");
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
-		case 'c':
+		case 'n':
 			_text->setText("Controls:\n<ARROW_UP> forward\n<ARROW_DOWN> back\n<ARROW_LEFT> left\n<ARROW_RIGHT> right");
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
-		case 'y':
-			i=(i+1)%n;
-			//_root->setChild(1,_fermula->Model=osgDB::readNodeFile(model[i]));
-			_text->setText("Model: "+model[i]);
-			_text->setPosition(osg::Vec3(10,350,-1));
-			//optimizer.optimize(_fermula);
-			return false;
-		case 'x':
-			i=abs((i-1)%n);
-			//_root->setChild(1,_fermula->Model=osgDB::readNodeFile(model[i]));
-			_text->setText("Model: "+model[i]);
-			_text->setPosition(osg::Vec3(10,350,-1));
-			return false;
+		case 'm':
+			_text->setText("Model:\n<y> ana_f1\n<x> mrki_ferm\n<c>kork_take2");
 		case 'b':
 			HUDBrzina->setNodeMask(0xffffffff - HUDBrzina->getNodeMask());
 			return false;
 		default:
 			return false;
-			}
+			}}
 		default:
 			return false;
-											  }
 	}
 }
 /********************************************/
@@ -393,31 +378,31 @@ public:
 };
 #pragma endregion
 
-//class CollisionTestCallback : public osg::NodeCallback
-//{
-//protected:
-//osg::BoundingSphere b1, b2;
-//	osg::Node*a1,*a2;
-//public:
-//	CollisionTestCallback::CollisionTestCallback(osg::Node* n1,osg::Node* n2)
-//	{
-//		a1=n1;
-//		a2=n2;
-//		b1 = a1->getBound();
-//		b2 = a2->getBound();
-//	}
-//	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
-//	{
-//		if(b1.intersects(b2)) std::cout << "Collision" << std::endl;
-//		else std::cout << "No Collision" << std::endl;
-//		//float r1 = b1.radius();		
-//		//float r2 = b2.radius();
-//		//osg::Vec3 c1 = b1.center();
-//		//osg::Vec3 c2 = b2.center();
-//		//std::cout <<"radius1 = "<< r1 <<" centar1 = "<< c1 <<std::endl;
-//		//std::cout <<"radius2 = "<< r2 <<" centar2 = "<< c2 <<std::endl;
-//	}
-//};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class UpdateVoziloPosCallback: public osg::NodeCallback
 {
@@ -579,21 +564,21 @@ public:
 			//Detekcija kolizije, koristi kvadre
 			//std::cout << "Centar vozila: " << b1.center().x() << "," << b1.center().y() << "," << b1.center().z() << "  Radius vozila: " << b1.radius();
 			//std::cout << "Centar zgrade: " << b2.center().x() << "," << b2.center().y() << "," << b2.center().z() << "  Radius zgrade: " << b2.radius();
-			//if (init == true)
-			//{
-			//	dimX1= -vmt->getBound().radius()*0.42f; //omjeri dimenzija vozila aninog modela
-			//	dimX2= vmt->getBound().radius()*0.42f;
-			//	dimY1= -vmt->getBound().radius()*1.95f;
-			//	dimY2= vmt->getBound().radius()*1.95f;
-			//	dimZ1= -vmt->getBound().radius()*0.333f;
-			//	dimZ2= vmt->getBound().radius()*0.333f;
-			//	//Postavljanje dimanzija bounding boxa vozila
-			//	b1=vmt->getBound();
-			//	boxVozilo.init(); //Èišæenje prethodnih podataka
-			//	boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-			//		b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
-			//	init = false;
-			//}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 			//Postavljanje dimanzija bounding boxa vozila i osvjezavanje pozicije
 
 			//b1=vmt->getBound();
@@ -781,9 +766,10 @@ int main (int argc, char * argv[])
 		osgART::attachDefaultEventCallbacks(arT[i],marker[i]);
 		arT[i]->getOrCreateStateSet()->setRenderBinDetails(300, "RenderBin");
 	}
-	for (int i = 0; i<10;i++){
-		if (i<6) arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.IVE"));
-		else arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.IVE"));}
+	for (int i = 0; i<5; i++){
+		arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.IVE"));
+		arT[i+5]->addChild(osgDB::readNodeFile("../../Modeli/cesta_skr.IVE"));}
+
 
 	arT[10]->addChild(osgDB::readNodeFile("../../Modeli/reklama.IVE"));
 	arT[11]->addChild(osgDB::readNodeFile("../../Modeli/snjegovic.IVE"));
@@ -903,7 +889,8 @@ int main (int argc, char * argv[])
 	HUDStateSet->setMode(GL_BLEND,osg::StateAttribute::ON);
 	HUDStateSet->setMode(GL_DEPTH_TEST,osg::StateAttribute::OFF);
 	HUDStateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-	HUDStateSet->setRenderBinDetails(11,"RenderBin");
+	HUDStateSet->setRenderBinDetails(500,"RenderBin");
+	
 
 	HUDText->setCharacterSize(25);
 	HUDText->setFont("sfdr.ttf");
@@ -912,17 +899,11 @@ int main (int argc, char * argv[])
 	HUDText->setAxisAlignment(osgText::Text::SCREEN);
 	HUDText->setPosition(osg::Vec3(450,740,-1));
 	HUDText->setColor(osg::Vec4(0.8,0.2,0.1,1));
-	std::string brz;
-	char b[5];
-	int i=10;
-	itoa(i,b,10);
-	brz.append(b);
-	brz.append(" km/s");
+
 	HUDModelViewMatrix->addChild(HUDBrzina);
 	brzina->setColor(osg::Vec4(1,0,0,1));
 	brzina->setCharacterSize(30);
 	brzina->setFont("sfdr.ttf");
-	brzina->setText("Brzina: "+brz);
 	brzina->setPosition(osg::Vec3(800,740,-1));
 	HUDBrzina->addDrawable(brzina);
 	HUDGeode->setNodeMask(0);
