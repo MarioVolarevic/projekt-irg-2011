@@ -196,15 +196,15 @@ bool KeyboardHandlerForHUD::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIAc
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
 		case 'p':
-			_text->setText("help: \n<o> back to game\n<n> see controls\n<m> see models\n<b> show/hide speed");
+			_text->setText("help: \n<o> back to game\n<n> see controls\n<l> see models\n<b> show/hide speed");
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
 		case 'n':
-			_text->setText("Controls:\n<ARROW_UP> forward\n<ARROW_DOWN> back\n<ARROW_LEFT> left\n<ARROW_RIGHT> right");
+			_text->setText("Controls:\n<ARROW_UP> forward\n<ARROW_DOWN> back\n<ARROW_LEFT> left\n<ARROW_RIGHT> right\n<F1> reset\n\n<p> back to menu\n<o> back to game");
 			_text->setPosition(osg::Vec3(10,640,-1));
 			return false;
-		case 'm':
-			_text->setText("Model:\n<y> ana_f1\n<x> mrki_ferm\n<c>kork_take2");
+		case 'l':
+			_text->setText("Model:\n<y> ana_f1\n<x> mrki_ferm\n<c>kork_take2\n\n<p> back to menu\n<o> back to game");
 		case 'b':
 			HUDBrzina->setNodeMask(0xffffffff - HUDBrzina->getNodeMask());
 			return false;
@@ -902,7 +902,7 @@ int main (int argc, char * argv[])
 
 	HUDModelViewMatrix->addChild(HUDBrzina);
 	brzina->setColor(osg::Vec4(1,0,0,1));
-	brzina->setCharacterSize(30);
+	brzina->setCharacterSize(35);
 	brzina->setFont("sfdr.ttf");
 	brzina->setPosition(osg::Vec3(800,740,-1));
 	HUDBrzina->addDrawable(brzina);
