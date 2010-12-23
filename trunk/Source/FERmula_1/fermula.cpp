@@ -378,32 +378,6 @@ public:
 };
 #pragma endregion
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class UpdateVoziloPosCallback: public osg::NodeCallback
 {
 protected:
@@ -564,21 +538,6 @@ public:
 			//Detekcija kolizije, koristi kvadre
 			//std::cout << "Centar vozila: " << b1.center().x() << "," << b1.center().y() << "," << b1.center().z() << "  Radius vozila: " << b1.radius();
 			//std::cout << "Centar zgrade: " << b2.center().x() << "," << b2.center().y() << "," << b2.center().z() << "  Radius zgrade: " << b2.radius();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 			//Postavljanje dimanzija bounding boxa vozila i osvjezavanje pozicije
 
 			//b1=vmt->getBound();
@@ -898,7 +857,7 @@ int main (int argc, char * argv[])
 	//HUDText->setAlignment(osgText::Text::CENTER_TOP);
 	HUDText->setAxisAlignment(osgText::Text::SCREEN);
 	HUDText->setPosition(osg::Vec3(450,740,-1));
-	HUDText->setColor(osg::Vec4(0.8,0.2,0.1,1));
+	HUDText->setColor(osg::Vec4(1,0,0,1));
 
 	HUDModelViewMatrix->addChild(HUDBrzina);
 	brzina->setColor(osg::Vec4(1,0,0,1));
