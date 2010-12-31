@@ -1,28 +1,25 @@
 #include "windows.h"
 #include "VoziloInputDeviceStateType.h"
-#include <osgART/Foundation>
 #include <osgART/VideoLayer>
 #include <osgART/PluginManager>
-#include <osgART/VideoGeode>
-#include <osgART/Utils>
 #include <osgART/GeometryUtils>
 #include <osgART/MarkerCallback>
-#include <osgART/TransformFilterCallback>
-#include <osgART/Marker>
-
-#include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
-
 #include <osg/ComputeBoundsVisitor>
-#include <osg/GraphicsContext>
-#include <osg/positionattitudetransform>
-#include <osg/matrixtransform>
-#include <osg/switch>
-
-#include <osgGA/GUIEventHandler>
-
-#include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
+
+//#include <osgART/Foundation>
+//#include <osgART/VideoGeode>
+//#include <osgART/Utils>
+//#include <osgART/TransformFilterCallback>
+//#include <osgART/Marker>
+//#include <osgViewer/Viewer>
+//#include <osg/GraphicsContext>
+//#include <osg/positionattitudetransform>
+//#include <osg/matrixtransform>
+//#include <osg/switch>
+//#include <osgGA/GUIEventHandler>
+//#include <osgDB/FileUtils>
 
 #define br_markera 16
 
@@ -31,11 +28,6 @@ const float skretanjeLimit=0.4;
 const int maxBrzina=20;
 const int maxBrzinaR=4;
 
-//osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
-
-//osg::ref_ptr<osg::Node> Model =  osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
-//int okrenutL = 0;
-//int okrenutD = 0;
 
 #pragma region trazenje i povezivanje dijela modela
 // funkcija za traženje dijelova modela (služi za animaciju kotaca)
@@ -126,7 +118,6 @@ public:
 		brzina = 0.f;
 		vrijeme = 0.f;
 	}
-	//Model = osgDB::readNodeFile( "../../Modeli/fermula_kork.3DS" );
 
 	void okreniLijevo(bool t)
 	{
@@ -150,10 +141,6 @@ public:
 		ltr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
 		dtr->setMatrix(osg::Matrix::rotate(osg::inDegrees(-30.0f),osg::Z_AXIS));
 	}
-	//void promijeniModel(std::string n)
-	//{
-	//	Model = osgDB::readNodeFile(n);
-	//}
 
 };
 
@@ -217,48 +204,6 @@ bool KeyboardHandlerForHUD::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIAc
 }
 /********************************************/
 
-#pragma region Proximity Callback
-//
-//class MarkerProximityUpdateCallback : public osg::NodeCallback 
-//{
-//private:
-//	osg::MatrixTransform* mtA;
-//	osg::MatrixTransform* mtB;
-//	osg::Switch* mSwitchA;
-//	float mThreshold;
-//
-//public:
-//	MarkerProximityUpdateCallback(osg::MatrixTransform* mA, osg::MatrixTransform* mB, osg::Switch* switchA, float threshold) : 
-//	  osg::NodeCallback(), 
-//		  mtA(mA), mtB(mB),
-//		  mSwitchA(switchA), mThreshold(threshold) { }
-//
-//	  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) 
-//	  {
-//		  /** CALCULATE INTER-MARKER PROXIMITY:
-//		  Here we obtain the current position of each marker, and the
-//		  distance between them by examining
-//		  the translation components of their parent transformation 
-//		  matrices **/
-//		  osg::Vec3 posA = mtA->getMatrix().getTrans();
-//		  osg::Vec3 posB = mtB->getMatrix().getTrans();
-//		  osg::Vec3 offset = posA - posB;
-//		  float distance = offset.length();
-//		  //scene->setUpdateCallback(new MarkerProximityUpdateCallback(mtA, mtB,switchA.get(),switchB.get(),200.0f)); 
-//
-//		  /** LOAD APPROPRIATE MODELS:
-//		  Here we use each marker's OSG Switch node to swap between
-//		  models, depending on the inter-marker distance we have just 
-//		  calculated. **/
-//		  if (distance <= mThreshold) {
-//			  if (mSwitchA->getNumChildren() > 1) mSwitchA->setSingleChildOn(1);
-//		  } else {
-//			  if (mSwitchA->getNumChildren() > 0) mSwitchA->setSingleChildOn(0);
-//		  }
-//		  traverse(node,nv);
-//	  }
-//};
-#pragma endregion
 
 #pragma region Keyboard Handler
 
@@ -471,11 +416,6 @@ public:
 					v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme+1));
 					v->vrijeme+=0.03f;
 
-					/*if (v->brzina>v->brzina2) { //dodaj brzina2
-					v->brzina2+=1;
-					std::cout << "brzinaF = " << v -> brzina << std::endl;
-					std::cout << "brzinaSfF time  = " << v -> vrijeme << std::endl;
-					}*/
 				}
 				if (v->brzina<0)
 				{
@@ -496,8 +436,6 @@ public:
 					}
 					else v->brzina-=0.2; //rikverc
 
-					//std::cout << "brzinaB = " << v -> brzina << std::endl;
-
 				}
 				vmt->preMult(osg::Matrix::translate(0,-(v -> brzina),0));
 			} 
@@ -513,8 +451,6 @@ public:
 				if (v->brzina < 0){
 					v->brzina+=0.25f;
 				}
-				//std::cout << "brzinaSfF = " << v -> brzina << std::endl;
-				//std::cout << "brzinaSfF time  = " << v -> vrijeme << std::endl;
 				vmt->preMult(osg::Matrix::translate(0,-(v->brzina),0));				
 			}			
 			if ((voziloInputDeviceState->rotLReq)&&(v->brzina>skretanjeLimit))
@@ -535,16 +471,6 @@ public:
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(-kutZakretanja),osg::Z_AXIS));
 			}
 
-			//Detekcija kolizije, koristi kvadre
-			//std::cout << "Centar vozila: " << b1.center().x() << "," << b1.center().y() << "," << b1.center().z() << "  Radius vozila: " << b1.radius();
-			//std::cout << "Centar zgrade: " << b2.center().x() << "," << b2.center().y() << "," << b2.center().z() << "  Radius zgrade: " << b2.radius();
-			//Postavljanje dimanzija bounding boxa vozila i osvjezavanje pozicije
-
-			//b1=vmt->getBound();
-			//boxVozilo.init(); //Èišæenje prethodnih podataka
-			//boxVozilo.set(
-			//boxVozilo.set(b1.center().x()+dimX1, b1.center().y()+dimY1, b1.center().z()+dimZ1,
-			//	b1.center().x()+dimX2, b1.center().y()+dimY2, b1.center().z()+dimZ2);  //skaliranje kugle u kvadar
 			osg::ComputeBoundsVisitor cbbv; 
 			vmt->accept(cbbv); 
 			boxVozilo.init();
@@ -556,16 +482,13 @@ public:
 				//Postavljanje dimanzija bounding boxa za svaku zgradu i provjera kolizije sa zgradama
 				for(int k=0; k<BR_EL_ZGRADE; k++)
 				{
-					boxZgrada.init(); //Èišæenje prethodnih podataka
+					boxZgrada.init(); //Ciscenje prethodnih podataka
 					boxZgrada.set(b2[k].center().x()+zgX1[k], b2[k].center().y()+zgY1[k], b2[k].center().z()+zgZ1[k],
 						b2[k].center().x()+zgX2[k], b2[k].center().y()+zgY2[k], b2[k].center().z()+zgZ2[k]);
 
 					if(boxVozilo.intersects(boxZgrada))
 					{
-						//std::cout << "Collision" << std::endl;
-
 						vmt->preMult(osg::Matrix::translate(0,(v -> brzina),0));
-						//vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanja),osg::Z_AXIS));
 						v->brzina=0;
 						v->vrijeme=0;
 						kutZakretanja = 0;
@@ -575,43 +498,19 @@ public:
 			if(voziloInputDeviceState->promijeniModel == 1) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
-
-
 			}
 			else if (voziloInputDeviceState->promijeniModel == 2) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/mrki_ferm.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
-
 			}
 			else if (voziloInputDeviceState->promijeniModel == 3) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/kork_take2.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
 			}
-
 		}
 		ispisBrzina(v);
 	}
 };
-
-#pragma region Custom Visibility Callback
-//class MyMarkerVisibilityCallback : public osgART::MarkerVisibilityCallback
-//{
-//public:
-//	MyMarkerVisibilityCallback(osgART::Marker* marker):osgART::MarkerVisibilityCallback(marker){}
-//	void operator()(osg::Node* node, osg::NodeVisitor* nv) 
-//	{
-//		if (osg::Switch* _switch = dynamic_cast<osg::Switch*>(node)) {
-//			_switch->setSingleChildOn(m_marker->valid() ? 0 : 1);   
-//		} else {
-//			node->setNodeMask(0xFFFFFFFF);
-//			nv->setNodeMaskOverride(0x0);
-//		}
-//		traverse(node,nv);
-//	}
-//};
-
-
-#pragma endregion //zasad se ne koristi
 
 osg::Group* createImageBackground(osg::Image* video) {
 	osgART::VideoLayer* _layer = new osgART::VideoLayer();
@@ -699,7 +598,6 @@ int main (int argc, char * argv[])
 	marker[13] = tracker->addMarker("single;data/od.p;60;0;0");
 	marker[14] = tracker->addMarker("single;data/oe.p;60;0;0");
 	marker[15] = tracker->addMarker("single;data/of.p;60;0;0");
-
 	//aktiviranje markera
 	for (int i=0;i<br_markera; i++)
 		marker[i]->setActive(true);
@@ -741,16 +639,11 @@ int main (int argc, char * argv[])
 	osg::ref_ptr<osg::MatrixTransform> multiTrans = new osg::MatrixTransform();
 	osgART::attachDefaultEventCallbacks(multiTrans, markerMult);
 	osg::ref_ptr<osg::MatrixTransform> zg_fer = new osg::MatrixTransform();
-	//zg_fer->addChild(osgDB::readNodeFile("../../Modeli/fer_zgrada_scale.3DS"));
 	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_gume_spojeno.IVE"));
-	//zg_fer->preMult(osg::Matrix::translate(osg::Vec3(0,0,0)));
 	multiTrans->addChild(zg_fer);
 	osg::ref_ptr<osg::MatrixTransform> tlo = new osg::MatrixTransform();
 	tlo->addChild(osgDB::readNodeFile("../../Modeli/tlo.IVE"));
-	//osg::ref_ptr<osg::StateSet> st_tlo = tlo->getOrCreateStateSet();
 	tlo->preMult(osg::Matrix::translate(osg::Vec3(0,0,-30)));
-	//st_tlo->setMode(GL_DEPTH_TEST,osg::StateAttribute::OFF);
-	//st_tlo->setRenderBinDetails(500,"RenderBin");
 	multiTrans->addChild(tlo);
 	multiTrans->getOrCreateStateSet()->setRenderBinDetails(50,"RenderBin");
 
@@ -760,31 +653,14 @@ int main (int argc, char * argv[])
 	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
 	tran_fer->addChild(v->Model);
 	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(150,-250,0)));
-	//tran_fer->getOrCreateStateSet()->setRenderBinDetails(150,"RenderBin");
 	//update kontrola
-	//tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v));
 	tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v,zg_fer));
 	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState, v);
 	viewer.addEventHandler(voziloEventHandler);
 	multiTrans->addChild(tran_fer);
 	osg::ref_ptr<osg::MatrixTransform> tr_ces = new osg::MatrixTransform(osg::Matrix::translate(osg::Vec3(0,-170,0)));
-	//tr_ces->preMult(osg::Matrix::scale(osg::Vec3(1,0.5,1)));
-	////tr_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
-	//multiTrans->addChild(tr_ces);
-	////grupa model i cesta
-	//osg::ref_ptr<osg::Group> mod_ces= new osg::Group();
-	//mod_ces->addChild(tran_fer);
-	//mod_ces->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.3ds"));
-
-	////switch za prikazivanje dodatnog modela ovisno o udaljenosti markera
-	//osg::ref_ptr<osg::Switch> switchA = new osg::Switch();
-	//switchA->addChild(tran_fer,true);
-	//switchA->addChild(mod_ces,false);
-	//arTA->addChild(switchA);
 
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
-
-	//cam->setUpdateCallback(new CollisionTestCallback(tran_fer, zg_fer));
 
 	/************HUD**************/
 	osg::Geode* HUDGeode = new osg::Geode();
@@ -826,9 +702,9 @@ int main (int argc, char * argv[])
 	HUDGeometry->setTexCoordArray(0,textcoords);
 	osg::Texture2D* HUDTexture = new osg::Texture2D;
 	HUDTexture->setDataVariance(osg::Object::DYNAMIC);
-	osg::Image* HUDImage;
-	HUDImage=osgDB::readImageFile("grass.bmp");
-	HUDTexture->setImage(HUDImage);
+	//osg::Image* HUDImage;
+	//HUDImage=osgDB::readImageFile("grass.bmp");
+	//HUDTexture->setImage(HUDImage);
 	osg::Vec3Array* HUDnormals= new osg::Vec3Array;
 	HUDnormals->push_back(osg::Vec3(0.0f,0.0f,1.0f));
 	HUDGeometry->setNormalArray(HUDnormals);
@@ -867,8 +743,6 @@ int main (int argc, char * argv[])
 	HUDBrzina->addDrawable(brzina);
 	HUDGeode->setNodeMask(0);
 	ispisBrzina(v);
-
-
 	/**********************************/
 	viewer.addEventHandler(new KeyboardHandlerForHUD(HUDGeode,HUDText,v,root));
 
@@ -878,9 +752,7 @@ int main (int argc, char * argv[])
 	cam->addChild(multiTrans);
 	cam->addChild(videoBackground.get());
 	root->addChild(cam.get());
-	//root->setUpdateCallback(new MarkerProximityUpdateCallback(arTA, arTB,switchA,300));
 	video->start();
-	//int r = viewer.run();  
 	FrameLimiter* fl = new FrameLimiter(60);
 	viewer.realize();
 	while (!viewer.done())
@@ -889,5 +761,4 @@ int main (int argc, char * argv[])
 		viewer.frame();
 	}
 	video->close();
-	//return r;
 }
