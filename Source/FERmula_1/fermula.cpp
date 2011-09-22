@@ -1,4 +1,5 @@
 #include "windows.h"
+#include <iostream>
 #include "VoziloInputDeviceStateType.h"
 #include <osgART/VideoLayer>
 #include <osgART/PluginManager>
@@ -8,6 +9,9 @@
 #include <osg/ComputeBoundsVisitor>
 #include <osgDB/ReadFile>
 
+#include <osgAudio/Source.h>
+#include <osgAudio/Sample.h>
+#include <osgAudio/AudioEnvironment.h>
 //#include <osgART/Foundation>
 //#include <osgART/VideoGeode>
 //#include <osgART/Utils>
@@ -23,10 +27,17 @@
 
 #define br_markera 16
 
- float kutZakretanja=6;
+float kutZakretanja=6;
 const float skretanjeLimit=0.4;
-const int maxBrzina=20;
-const int maxBrzinaR=4;
+const int maxBrzina=40; //default 20
+const int maxBrzinaR=4; //default 4
+const int FrameLimit=30; //default 60
+osg::ref_ptr<osgAudio::Source> zvuk = new osgAudio::Source;
+std::string file[8];
+int play_sound = 0;
+int sound_num;
+osg::Timer_t end_tick;
+
 
 
 #pragma region trazenje i povezivanje dijela modela
@@ -106,8 +117,8 @@ class Vozilo
 {
 public:
 	osg::Node* Model;
-	float brzina;
-	float vrijeme;
+	double brzina;
+	double vrijeme;
 	int okrenutL;
 	int okrenutD;
 	Vozilo(std::string ime_mod)
@@ -204,7 +215,52 @@ bool KeyboardHandlerForHUD::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIAc
 }
 /********************************************/
 
+class PlayAndSwitchSound
+{
+private:
+	osg::Timer timer;
+	osg::Timer_t start_tick;
+	osg::Timer_t end_tick;
+	//end tick stavljen kao glob varijabla da se ne poremeti kada se pritisne neka druga tipka
+public:
+	PlayAndSwitchSound(int snd)
+	{
+		sound_num = snd;
+	}
+	void psound() //sustav za mijenjanje brzina 1,2,3,4(loop)
+	{
+		//osg::Timer timer;
+		//osg::Timer_t start_tick;
+		//osg::Timer_t end_tick;
+		if (play_sound == 0)
+		{
+			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->play();
+			start_tick = timer.tick();
+			play_sound = 1;
+		}
+		end_tick = timer.tick();
+		if (sound_num == 2 && timer.delta_m(start_tick,end_tick) > 4884)
+		{
+			sound_num = 3;
+			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->play();
+		}
+		if (sound_num == 3 && timer.delta_m(start_tick,end_tick) > 10552)
+		{
+			sound_num = 4;
+			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->play();
+		}
+		if (sound_num == 4 && timer.delta_m(start_tick,end_tick) > 15873)
+		{
+			sound_num = 5;
+			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->play();
+		}
+	}
 
+};
 #pragma region Keyboard Handler
 
 class MyKeyboardEventHandler : public osgGA::GUIEventHandler 
@@ -213,12 +269,12 @@ protected:
 	VoziloInputDeviceStateType* voziloInputDeviceState;
 	Vozilo* v;
 	//int i;
-
 public:
 	MyKeyboardEventHandler(VoziloInputDeviceStateType* vids, Vozilo* vozilo)
 	{
 		voziloInputDeviceState = vids;
 		v = vozilo;
+
 	}
 	/**
 	OVERRIDE THE HANDLE METHOD:
@@ -229,7 +285,6 @@ public:
 	**/
 	bool MyKeyboardEventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter& aa) 
 	{
-
 		switch (ea.getEventType()) 
 		{
 		case (osgGA::GUIEventAdapter::KEYDOWN): 
@@ -238,6 +293,7 @@ public:
 				{
 				case osgGA::GUIEventAdapter::KEY_Up: 
 					voziloInputDeviceState->moveFwdRequest = true;
+					//psnd->psound();
 					return false;
 
 				case osgGA::GUIEventAdapter::KEY_Left:
@@ -260,18 +316,26 @@ public:
 
 				case osgGA::GUIEventAdapter::KEY_F1:
 					voziloInputDeviceState->resetReq = true;
+					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->play();
 					return false;
 
 				case 'y':
 					voziloInputDeviceState->promijeniModel = 1;
+					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->play();
 					return false;
 
 				case 'x':
 					voziloInputDeviceState->promijeniModel = 2;
+					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->play();
 					return false;
 
 				case 'c':
 					voziloInputDeviceState->promijeniModel = 3;
+					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->play();
 					return false;
 
 				default:
@@ -284,6 +348,11 @@ public:
 				{
 				case osgGA::GUIEventAdapter::KEY_Up:
 					voziloInputDeviceState->moveFwdRequest = false;
+					play_sound = 0;
+					zvuk->setSound(new osgAudio::Sample(file[6]));
+					zvuk->play();
+					sound_num = 2;
+
 					return false;
 				case osgGA::GUIEventAdapter::KEY_Left:
 					{
@@ -329,6 +398,8 @@ protected:
 	VoziloInputDeviceStateType* voziloInputDeviceState; 
 	Vozilo* v;
 	bool init;
+	PlayAndSwitchSound* psnd;
+
 #define BR_EL_ZGRADE 5	//broj elemenata zgrade FER-a (ABC, D, gumeD, gumeL, gumeG)
 	osg::BoundingSphere b1;
 	osg::BoundingSphere b2[BR_EL_ZGRADE];
@@ -341,6 +412,7 @@ protected:
 public:
 	UpdateVoziloPosCallback::UpdateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo,osg::Node* n1)
 	{
+		psnd = new PlayAndSwitchSound(2);
 		voziloInputDeviceState = vids;
 		v = vozilo;
 		init = true;
@@ -406,19 +478,23 @@ public:
 				v->brzina=0;
 				v->vrijeme=0;
 			}
+
 			if ((voziloInputDeviceState->moveFwdRequest)&&(!voziloInputDeviceState->moveBcwRequest))
-
 			{
-				if (v->brzina<=(maxBrzina-1)&&(v->brzina>=0))
+				psnd->psound();
 
+				if (v->brzina<=(maxBrzina-1)&&(v->brzina>=0))
 				{
 
-					v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme+1));
-					v->vrijeme+=0.03f;
+					v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme*0.5+10));
+					//v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme+1));
+
+					v->vrijeme+=0.03;
 
 				}
 				if (v->brzina<0)
 				{
+
 					v->brzina+=0.6; //pritisak na gas dok formula ide u rikverc
 				}
 				vmt->preMult(osg::Matrix::translate(0,-(v->brzina),0));
@@ -498,14 +574,17 @@ public:
 			if(voziloInputDeviceState->promijeniModel == 1) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/ana_f1.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
+
 			}
 			else if (voziloInputDeviceState->promijeniModel == 2) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/mrki_ferm.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
+
 			}
 			else if (voziloInputDeviceState->promijeniModel == 3) {
 				vmt->setChild(0,v->Model = osgDB::readNodeFile("../../Modeli/kork_take2.IVE")); 
 				voziloInputDeviceState->promijeniModel = 0;
+
 			}
 		}
 		ispisBrzina(v);
@@ -534,6 +613,23 @@ int main (int argc, char * argv[])
 	viewer.addEventHandler(new osgViewer::WindowSizeHandler);
 	viewer.addEventHandler(new osgViewer::ThreadingHandler);
 
+	//sound init
+	osgAudio::AudioEnvironment::instance()->init();
+	//std::string file[6];
+	file[0] = "start_l.wav";
+	file[1] = "idle_l.wav";
+	file[2] = "1first.wav";
+	file[3] = "2second.wav";
+	file[4] = "3third.wav";
+	file[5] = "4fourth_cruise_l.wav";
+	//file[4] = "stop.wav";
+	file[6] = "off_fast_l.wav";
+	zvuk->setSound(new osgAudio::Sample(file[0]));
+	zvuk->play();
+
+	//osg::ref_ptr<osgAudio::Source> zvuk = new osgAudio::Source;
+	zvuk->setGain(0.6f);
+	zvuk->setLooping(true);
 
 	// preload the video and tracker
 	int _video_id = osgART::PluginManager::instance()->load("osgart_video_artoolkit2");
@@ -662,6 +758,7 @@ int main (int argc, char * argv[])
 
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
 
+#pragma region HUD
 	/************HUD**************/
 	osg::Geode* HUDGeode = new osg::Geode();
 	osgText::Text* HUDText = new osgText::Text();
@@ -725,7 +822,7 @@ int main (int argc, char * argv[])
 	HUDStateSet->setMode(GL_DEPTH_TEST,osg::StateAttribute::OFF);
 	HUDStateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
 	HUDStateSet->setRenderBinDetails(500,"RenderBin");
-	
+
 
 	HUDText->setCharacterSize(25);
 	HUDText->setFont("sfdr.ttf");
@@ -745,6 +842,7 @@ int main (int argc, char * argv[])
 	ispisBrzina(v);
 	/**********************************/
 	viewer.addEventHandler(new KeyboardHandlerForHUD(HUDGeode,HUDText,v,root));
+#pragma endregion
 
 	for (int i = 0; i<br_markera;i++)
 		cam->addChild(arT[i]);
@@ -753,7 +851,7 @@ int main (int argc, char * argv[])
 	cam->addChild(videoBackground.get());
 	root->addChild(cam.get());
 	video->start();
-	FrameLimiter* fl = new FrameLimiter(60);
+	FrameLimiter* fl = new FrameLimiter(FrameLimit); 
 	viewer.realize();
 	while (!viewer.done())
 	{
