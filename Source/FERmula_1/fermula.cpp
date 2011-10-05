@@ -27,17 +27,16 @@
 
 #define br_markera 16
 
-float kutZakretanja=6;
+float kutZakretanja=6; //default 6, kad brzina naraste na 20 onda mijenjam u 8
 const float skretanjeLimit=0.4;
 const int maxBrzina=40; //default 20
 const int maxBrzinaR=4; //default 4
 const int FrameLimit=30; //default 60
 osg::ref_ptr<osgAudio::Source> zvuk = new osgAudio::Source;
-std::string file[8];
+std::string snd_file[9];
 int play_sound = 0;
 int sound_num;
-osg::Timer_t end_tick;
-
+bool sudar = false;
 
 
 #pragma region trazenje i povezivanje dijela modela
@@ -221,7 +220,6 @@ private:
 	osg::Timer timer;
 	osg::Timer_t start_tick;
 	osg::Timer_t end_tick;
-	//end tick stavljen kao glob varijabla da se ne poremeti kada se pritisne neka druga tipka
 public:
 	PlayAndSwitchSound(int snd)
 	{
@@ -234,7 +232,7 @@ public:
 		//osg::Timer_t end_tick;
 		if (play_sound == 0)
 		{
-			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->setSound(new osgAudio::Sample(snd_file[sound_num]));
 			zvuk->play();
 			start_tick = timer.tick();
 			play_sound = 1;
@@ -243,19 +241,19 @@ public:
 		if (sound_num == 2 && timer.delta_m(start_tick,end_tick) > 4884)
 		{
 			sound_num = 3;
-			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->setSound(new osgAudio::Sample(snd_file[sound_num]));
 			zvuk->play();
 		}
 		if (sound_num == 3 && timer.delta_m(start_tick,end_tick) > 10552)
 		{
 			sound_num = 4;
-			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->setSound(new osgAudio::Sample(snd_file[sound_num]));
 			zvuk->play();
 		}
 		if (sound_num == 4 && timer.delta_m(start_tick,end_tick) > 15873)
 		{
 			sound_num = 5;
-			zvuk->setSound(new osgAudio::Sample(file[sound_num]));
+			zvuk->setSound(new osgAudio::Sample(snd_file[sound_num]));
 			zvuk->play();
 		}
 	}
@@ -293,7 +291,6 @@ public:
 				{
 				case osgGA::GUIEventAdapter::KEY_Up: 
 					voziloInputDeviceState->moveFwdRequest = true;
-					//psnd->psound();
 					return false;
 
 				case osgGA::GUIEventAdapter::KEY_Left:
@@ -316,25 +313,25 @@ public:
 
 				case osgGA::GUIEventAdapter::KEY_F1:
 					voziloInputDeviceState->resetReq = true;
-					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->setSound(new osgAudio::Sample(snd_file[0]));
 					zvuk->play();
 					return false;
 
 				case 'y':
 					voziloInputDeviceState->promijeniModel = 1;
-					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->setSound(new osgAudio::Sample(snd_file[0]));
 					zvuk->play();
 					return false;
 
 				case 'x':
 					voziloInputDeviceState->promijeniModel = 2;
-					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->setSound(new osgAudio::Sample(snd_file[0]));
 					zvuk->play();
 					return false;
 
 				case 'c':
 					voziloInputDeviceState->promijeniModel = 3;
-					zvuk->setSound(new osgAudio::Sample(file[0]));
+					zvuk->setSound(new osgAudio::Sample(snd_file[0]));
 					zvuk->play();
 					return false;
 
@@ -348,10 +345,15 @@ public:
 				{
 				case osgGA::GUIEventAdapter::KEY_Up:
 					voziloInputDeviceState->moveFwdRequest = false;
-					play_sound = 0;
-					zvuk->setSound(new osgAudio::Sample(file[6]));
-					zvuk->play();
-					sound_num = 2;
+					if (play_sound==1){
+						play_sound = 0;
+						if(sudar == false){
+							zvuk->setSound(new osgAudio::Sample(snd_file[6]));
+							zvuk->play();
+						}
+						sound_num = 2;
+						sudar = false;
+					}
 
 					return false;
 				case osgGA::GUIEventAdapter::KEY_Left:
@@ -368,6 +370,17 @@ public:
 					}
 				case osgGA::GUIEventAdapter::KEY_Down:
 					voziloInputDeviceState->moveBcwRequest = false;
+					if (play_sound==1){
+						play_sound = 0;
+						if(sudar == false){
+
+							zvuk->setSound(new osgAudio::Sample(snd_file[6]));
+							zvuk->play();
+						}
+						sound_num = 2;
+						sudar = false;
+					}
+
 					return false;
 				case osgGA::GUIEventAdapter::KEY_F1:
 					voziloInputDeviceState->resetReq = false;
@@ -415,7 +428,7 @@ public:
 		psnd = new PlayAndSwitchSound(2);
 		voziloInputDeviceState = vids;
 		v = vozilo;
-		init = true;
+		//init = true;
 		osg::Node* abc_zg = FindNodeByName(n1,"abc_zgrada");
 		a1 = AddMatrixTransform(abc_zg);
 		b2[0] = a1->getBound();
@@ -481,15 +494,14 @@ public:
 
 			if ((voziloInputDeviceState->moveFwdRequest)&&(!voziloInputDeviceState->moveBcwRequest))
 			{
-				psnd->psound();
+				psnd->psound(); //pustaj zvuk i mijenjaj brzine
 
 				if (v->brzina<=(maxBrzina-1)&&(v->brzina>=0))
 				{
 
-					v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme*0.5+10));
-					//v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme+1));
-
-					v->vrijeme+=0.03;
+					v->brzina=(maxBrzina*(v->vrijeme)/(v->vrijeme+1));
+					//v->vrijeme+=0.03;
+					v->vrijeme+=0.01;
 
 				}
 				if (v->brzina<0)
@@ -502,8 +514,13 @@ public:
 			}
 
 			if ((voziloInputDeviceState->moveBcwRequest)&&(!voziloInputDeviceState->moveFwdRequest))
-
 			{
+				if(play_sound==0)
+				{
+					play_sound = 1;
+					zvuk->setSound(new osgAudio::Sample(snd_file[7]));
+					zvuk->play();	
+				}
 				if(v->brzina>=-maxBrzinaR)
 				{
 					if (v->brzina>0){
@@ -529,6 +546,9 @@ public:
 				}
 				vmt->preMult(osg::Matrix::translate(0,-(v->brzina),0));				
 			}			
+			if (v->brzina>20)
+				kutZakretanja = 9;
+			else kutZakretanja=6;
 			if ((voziloInputDeviceState->rotLReq)&&(v->brzina>skretanjeLimit))
 			{
 				vmt->preMult(osg::Matrix::rotate(osg::inDegrees(kutZakretanja),osg::Z_AXIS));
@@ -568,6 +588,11 @@ public:
 						v->brzina=0;
 						v->vrijeme=0;
 						kutZakretanja = 0;
+						if (sudar == false){
+							zvuk->setSound(new osgAudio::Sample(snd_file[8]));
+							zvuk->play();
+							sudar = true;
+						}
 					}
 				}
 			}
@@ -615,21 +640,21 @@ int main (int argc, char * argv[])
 
 	//sound init
 	osgAudio::AudioEnvironment::instance()->init();
-	//std::string file[6];
-	file[0] = "start_l.wav";
-	file[1] = "idle_l.wav";
-	file[2] = "1first.wav";
-	file[3] = "2second.wav";
-	file[4] = "3third.wav";
-	file[5] = "4fourth_cruise_l.wav";
-	//file[4] = "stop.wav";
-	file[6] = "off_fast_l.wav";
-	zvuk->setSound(new osgAudio::Sample(file[0]));
+	//std::string snd_file[6];
+	snd_file[0] = "start_l.wav";
+	snd_file[1] = "idle_l.wav";
+	snd_file[2] = "1first.wav";
+	snd_file[3] = "2second.wav";
+	snd_file[4] = "3third.wav";
+	snd_file[5] = "4fourth_cruise_l.wav";
+	snd_file[6] = "off_fast_l.wav";
+	snd_file[7] = "Reverse_l.wav";
+	snd_file[8] = "sudar.wav";
+	//snd_file[9] = "idle_l.wav";
+	zvuk->setSound(new osgAudio::Sample(snd_file[0]));
 	zvuk->play();
-
-	//osg::ref_ptr<osgAudio::Source> zvuk = new osgAudio::Source;
-	zvuk->setGain(0.6f);
 	zvuk->setLooping(true);
+	//zvuk->setGain(0.6f);
 
 	// preload the video and tracker
 	int _video_id = osgART::PluginManager::instance()->load("osgart_video_artoolkit2");
@@ -735,7 +760,7 @@ int main (int argc, char * argv[])
 	osg::ref_ptr<osg::MatrixTransform> multiTrans = new osg::MatrixTransform();
 	osgART::attachDefaultEventCallbacks(multiTrans, markerMult);
 	osg::ref_ptr<osg::MatrixTransform> zg_fer = new osg::MatrixTransform();
-	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_gume_spojeno.IVE"));
+	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_gume_spojeno_smotra.IVE"));
 	multiTrans->addChild(zg_fer);
 	osg::ref_ptr<osg::MatrixTransform> tlo = new osg::MatrixTransform();
 	tlo->addChild(osgDB::readNodeFile("../../Modeli/tlo.IVE"));
