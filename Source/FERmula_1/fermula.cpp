@@ -9,6 +9,13 @@
 #include <osg/ComputeBoundsVisitor>
 #include <osgDB/ReadFile>
 
+//#include <osgParticle/ExplosionEffect>
+//#include <osgParticle/ExplosionDebrisEffect>
+//#include <osgParticle/SmokeEffect>
+//#include <osgParticle/SmokeTrailEffect>
+//#include <osgParticle/FireEffect>
+//#include <osgParticle/ParticleSystemUpdater>
+
 #include <osgAudio/Source.h>
 #include <osgAudio/Sample.h>
 #include <osgAudio/AudioEnvironment.h>
@@ -164,7 +171,7 @@ void ispisBrzina(Vozilo* fermula){
 	char b[5];
 	itoa(fermula->brzina*2,b,10);
 	brz.append(b);
-	brz.append(" km/s");
+	brz.append(" km/h");
 	brzina->setText("Brzina: "+brz);
 	return;
 }
@@ -408,19 +415,19 @@ public:
 class UpdateVoziloPosCallback: public osg::NodeCallback
 {
 protected:
+#define BR_EL_ZGRADE 5	//broj elemenata zgrade FER-a (ABC, D, gumeD, gumeL, gumeG)
 	VoziloInputDeviceStateType* voziloInputDeviceState; 
 	Vozilo* v;
-	bool init;
+	//bool init;
 	PlayAndSwitchSound* psnd;
-
-#define BR_EL_ZGRADE 5	//broj elemenata zgrade FER-a (ABC, D, gumeD, gumeL, gumeG)
-	osg::BoundingSphere b1;
-	osg::BoundingSphere b2[BR_EL_ZGRADE];
-	osg::Node* a1;
+	osg::ComputeBoundsVisitor cbbv_granica[BR_EL_ZGRADE];
+	//osg::BoundingSphere b1;
+	//osg::BoundingSphere b2[BR_EL_ZGRADE];
+	//osg::Node* a1;
 	osg::BoundingBox boxVozilo;
 	osg::BoundingBox boxZgrada;
-	float dimX1,dimX2,dimY1,dimY2,dimZ1,dimZ2;
-	float zgX1[BR_EL_ZGRADE],zgX2[BR_EL_ZGRADE],zgY1[BR_EL_ZGRADE],zgY2[BR_EL_ZGRADE],zgZ1[BR_EL_ZGRADE],zgZ2[BR_EL_ZGRADE];
+	//float dimX1,dimX2,dimY1,dimY2,dimZ1,dimZ2;
+	//float zgX1[BR_EL_ZGRADE],zgX2[BR_EL_ZGRADE],zgY1[BR_EL_ZGRADE],zgY2[BR_EL_ZGRADE],zgZ1[BR_EL_ZGRADE],zgZ2[BR_EL_ZGRADE];
 
 public:
 	UpdateVoziloPosCallback::UpdateVoziloPosCallback(VoziloInputDeviceStateType* vids, Vozilo* vozilo,osg::Node* n1)
@@ -429,54 +436,59 @@ public:
 		voziloInputDeviceState = vids;
 		v = vozilo;
 		//init = true;
-		osg::Node* abc_zg = FindNodeByName(n1,"abc_zgrada");
-		a1 = AddMatrixTransform(abc_zg);
-		b2[0] = a1->getBound();
-		abc_zg = FindNodeByName(n1,"D_zgrada");
-		a1 = AddMatrixTransform(abc_zg);
-		b2[1] = a1->getBound();
-		abc_zg = FindNodeByName(n1,"zid_D");
-		a1 = AddMatrixTransform(abc_zg);
-		b2[2] = a1->getBound();
-		abc_zg = FindNodeByName(n1,"zid_L");
-		a1 = AddMatrixTransform(abc_zg);
-		b2[3] = a1->getBound();
-		abc_zg = FindNodeByName(n1,"zid_G");
-		a1 = AddMatrixTransform(abc_zg);
-		b2[4] = a1->getBound();
+		osg::Node* granica = FindNodeByName(n1,"abc_zgrada");
+		granica->accept(cbbv_granica[0]);
+		//a1 = AddMatrixTransform(abc_zg);
+		//b2[0] = a1->getBound();
+		granica = FindNodeByName(n1,"D_zgrada");
+		granica->accept(cbbv_granica[1]);
+		//a1 = AddMatrixTransform(abc_zg);
+		//b2[1] = a1->getBound();
+		granica = FindNodeByName(n1,"zid_D");
+		granica->accept(cbbv_granica[2]);
+		//a1 = AddMatrixTransform(abc_zg);
+		//b2[2] = a1->getBound();
+		granica = FindNodeByName(n1,"zid_L");
+		granica->accept(cbbv_granica[3]);
+		//a1 = AddMatrixTransform(abc_zg);
+		//b2[3] = a1->getBound();
+		granica = FindNodeByName(n1,"zid_G");
+		granica->accept(cbbv_granica[4]);
+		//a1 = AddMatrixTransform(abc_zg);
+		//b2[4] = a1->getBound();
 		//TO DO: Ako netko zna neka ovaj segment koda sredi tako da se parametri
 		//		 omjera uèitavaju iz datoteke (one ne treba kompajlirati za svaku preinaku)
 		//		 isto se odnosi i na onaj dio kod izbora vozila
-		zgX1[0]= -b2[0].radius()*0.6f;	//omjeri dimenzija abc_zgrade
-		zgX2[0]= b2[0].radius()*0.79f;
-		zgY1[0]= -b2[0].radius()*0.23f;
-		zgY2[0]= b2[0].radius()*0.25f;
-		zgZ1[0]= -b2[0].radius()*0.5f;
-		zgZ2[0]= b2[0].radius()*0.5f;
-		zgX1[1]= -b2[1].radius()*0.34f;	//omjeri dimenzija d_zgrade
-		zgX2[1]= b2[1].radius()*0.35f;
-		zgY1[1]= -b2[1].radius()*0.535f;
-		zgY2[1]= b2[1].radius()*0.7f;
-		zgZ1[1]= -b2[1].radius()*0.5f;
-		zgZ2[1]= b2[1].radius()*0.5f;
-		zgX1[2]= -b2[2].radius()*0.07f;	//omjeri dimenzija zid_D
-		zgX2[2]= b2[2].radius()*0.07f;
-		zgY1[2]= -b2[2].radius()*0.99f;
-		zgY2[2]= b2[2].radius()*0.99f;
-		zgZ1[2]= -b2[2].radius()*0.1f;
-		zgZ2[2]= b2[2].radius()*0.1f;
-		zgX1[3]= -b2[3].radius()*0.07f;	//omjeri dimenzija zid_L
-		zgX2[3]= b2[3].radius()*0.07f;
-		zgY1[3]= -b2[3].radius()*0.99f;
-		zgY2[3]= b2[3].radius()*0.99f;
-		zgZ1[3]= -b2[3].radius()*0.1f;
-		zgZ2[3]= b2[3].radius()*0.1f;
-		zgX1[4]= -b2[4].radius()*0.99f;	//omjeri dimenzija zid_G
-		zgX2[4]= b2[4].radius()*0.99f;
-		zgY1[4]= -b2[4].radius()*0.1f; 
-		zgY2[4]= b2[4].radius()*0.1f; 
-		zgZ1[4]= -b2[4].radius()*0.1f;
-		zgZ2[4]= b2[4].radius()*0.2f;
+		//zgX1[0]= -b2[0].radius()*0.6f;	//omjeri dimenzija abc_zgrade
+		//zgX2[0]= b2[0].radius()*0.79f;
+		//zgY1[0]= -b2[0].radius()*0.23f;
+		//zgY2[0]= b2[0].radius()*0.25f;
+		//zgZ1[0]= -b2[0].radius()*0.5f;
+		//zgZ2[0]= b2[0].radius()*0.5f;
+		//zgX1[1]= -b2[1].radius()*0.34f;	//omjeri dimenzija d_zgrade
+		//zgX2[1]= b2[1].radius()*0.35f;
+		//zgY1[1]= -b2[1].radius()*0.535f;
+		//zgY2[1]= b2[1].radius()*0.7f;
+		//zgZ1[1]= -b2[1].radius()*0.5f;
+		//zgZ2[1]= b2[1].radius()*0.5f;
+		//zgX1[2]= -b2[2].radius()*0.07f;	//omjeri dimenzija zid_D
+		//zgX2[2]= b2[2].radius()*0.07f;
+		//zgY1[2]= -b2[2].radius()*0.99f;
+		//zgY2[2]= b2[2].radius()*0.99f;
+		//zgZ1[2]= -b2[2].radius()*0.1f;
+		//zgZ2[2]= b2[2].radius()*0.1f;
+		//zgX1[3]= -b2[3].radius()*0.07f;	//omjeri dimenzija zid_L
+		//zgX2[3]= b2[3].radius()*0.07f;
+		//zgY1[3]= -b2[3].radius()*0.99f;
+		//zgY2[3]= b2[3].radius()*0.99f;
+		//zgZ1[3]= -b2[3].radius()*0.1f;
+		//zgZ2[3]= b2[3].radius()*0.1f;
+		//zgX1[4]= -b2[4].radius()*0.99f;	//omjeri dimenzija zid_G
+		//zgX2[4]= b2[4].radius()*0.99f;
+		//zgY1[4]= -b2[4].radius()*0.1f; 
+		//zgY2[4]= b2[4].radius()*0.1f; 
+		//zgZ1[4]= -b2[4].radius()*0.1f;
+		//zgZ2[4]= b2[4].radius()*0.2f;
 
 	}
 	virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
@@ -579,8 +591,9 @@ public:
 				for(int k=0; k<BR_EL_ZGRADE; k++)
 				{
 					boxZgrada.init(); //Ciscenje prethodnih podataka
-					boxZgrada.set(b2[k].center().x()+zgX1[k], b2[k].center().y()+zgY1[k], b2[k].center().z()+zgZ1[k],
-						b2[k].center().x()+zgX2[k], b2[k].center().y()+zgY2[k], b2[k].center().z()+zgZ2[k]);
+					boxZgrada = cbbv_granica[k].getBoundingBox();
+					//boxZgrada.set(b2[k].center().x()+zgX1[k], b2[k].center().y()+zgY1[k], b2[k].center().z()+zgZ1[k],
+					//	b2[k].center().x()+zgX2[k], b2[k].center().y()+zgY2[k], b2[k].center().z()+zgZ2[k]);
 
 					if(boxVozilo.intersects(boxZgrada))
 					{
@@ -625,6 +638,57 @@ osg::Group* createImageBackground(osg::Image* video) {
 	return _layer;
 }
 
+//class EmitterUpdateCallback : public osg::NodeCallback {
+//
+//private:
+//
+//	osgParticle::PointPlacer* placer;
+//	osg::MatrixTransform* trans;
+//
+//public:
+//
+//	EmitterUpdateCallback(osgParticle::PointPlacer* p, osg::MatrixTransform* mt) {
+//		placer = p;
+//		trans = mt;
+//	}
+//
+//	void operator() (osg::Node* node, osg::NodeVisitor* nv) {
+//		placer->setCenter(trans->getMatrix().getTrans());
+//		traverse(node,nv);
+//	}
+//};
+//
+//class SmokeParticleSystem : public osg::Group {
+//private:
+//	osgParticle::PointPlacer* placer;	
+//public:
+//	SmokeParticleSystem(osg::Group* scene, osg::MatrixTransform*mt)
+//	{
+//		osgParticle::ParticleSystem* dustParticleSystem = new osgParticle::ParticleSystem;
+//		osg::Geode *geode = new osg::Geode();
+//		geode->addDrawable(dustParticleSystem);
+//		this->addChild(geode);
+//		dustParticleSystem->setDefaultAttributes("smoke.rgb",false,false,0);
+//		osgParticle::Particle smokeParticle;
+//		smokeParticle.setSizeRange(osgParticle::rangef(4.0f,20.0f));
+//		smokeParticle.setLifeTime(15);
+//		smokeParticle.setMass(0.4f);
+//		smokeParticle.setColorRange(osgParticle::rangev4(osg::Vec4(1,1,1,1),osg::Vec4(0,0,0,0.3f)));
+//		dustParticleSystem->setDefaultParticleTemplate(smokeParticle);
+//		osgParticle::ParticleSystemUpdater *dustSystemUpdater = new osgParticle::ParticleSystemUpdater;
+//		dustSystemUpdater->addParticleSystem(dustParticleSystem);
+//		this->addChild(dustSystemUpdater);
+//		osgParticle::ModularEmitter *emitter = new osgParticle::ModularEmitter;
+//		emitter->setParticleSystem(dustParticleSystem);
+//		this->addChild(emitter);
+//		osgParticle::RandomRateCounter *dustRate = static_cast<osgParticle::RandomRateCounter*> (emitter->getCounter());
+//		dustRate->setRateRange(40,80);
+//		osgParticle::PointPlacer* placer = 
+//			static_cast<osgParticle::PointPlacer *>(emitter->getPlacer());
+//		this->setUpdateCallback(new EmitterUpdateCallback(placer, mt));
+//	}
+//};
+//
 int main (int argc, char * argv[])
 {
 	osgViewer::Viewer viewer;
@@ -730,6 +794,8 @@ int main (int argc, char * argv[])
 		osg::notify(osg::FATAL) << "Could not add marker! multi" << std::endl;
 		exit(-1);
 	}
+
+
 	markerMult->setActive(true);
 
 	//video
@@ -738,11 +804,12 @@ int main (int argc, char * argv[])
 
 	//inicijalizacija transformacija i povezivanje s markerom
 	osg::ref_ptr<osg::MatrixTransform> arT[br_markera];
+	osg::ref_ptr<osg::MatrixTransform> dim = new osg::MatrixTransform();
 	for (int i = 0; i < br_markera; i++)
 	{
 		arT[i] = new osg::MatrixTransform();
-		osgART::attachDefaultEventCallbacks(arT[i],marker[i]);
 		arT[i]->getOrCreateStateSet()->setRenderBinDetails(300, "RenderBin");
+		osgART::attachDefaultEventCallbacks(arT[i],marker[i]);
 	}
 	for (int i = 0; i<5; i++){
 		arT[i]->addChild(osgDB::readNodeFile("../../Modeli/cesta_rav.IVE"));
@@ -756,32 +823,46 @@ int main (int argc, char * argv[])
 	arT[14]->addChild(osgDB::readNodeFile("../../Modeli/rekl2.IVE"));
 	arT[15]->addChild(osgDB::readNodeFile("../../Modeli/kuca_drvo.IVE"));
 
+	////particle system
+	////osg::ref_ptr<SmokeParticleSystem> smoke = new SmokeParticleSystem(root,arT[15]);
+	//osg::ref_ptr<SmokeParticleSystem> smoke = new SmokeParticleSystem(root,arT[15]);
+	//arT[15]->addChild(dim);
+	//dim->addChild(smoke);
+	//dim->preMult(osg::Matrix::translate(osg::Vec3(0,0,335)));
+	//dim->getOrCreateStateSet()->setRenderBinDetails(150,"RenderBin");
+
+	//arT[15]->addChild(smoke);
+
 	//arTMulti
 	osg::ref_ptr<osg::MatrixTransform> multiTrans = new osg::MatrixTransform();
 	osgART::attachDefaultEventCallbacks(multiTrans, markerMult);
 	osg::ref_ptr<osg::MatrixTransform> zg_fer = new osg::MatrixTransform();
+	zg_fer->getOrCreateStateSet()->setRenderBinDetails(400,"RenderBin");
 	zg_fer->addChild(osgDB::readNodeFile("../../Modeli/abcd_zg_gume_spojeno_smotra.IVE"));
 	multiTrans->addChild(zg_fer);
 	osg::ref_ptr<osg::MatrixTransform> tlo = new osg::MatrixTransform();
 	tlo->addChild(osgDB::readNodeFile("../../Modeli/tlo.IVE"));
+	tlo->getOrCreateStateSet()->setRenderBinDetails(50,"RenderBin");
 	tlo->preMult(osg::Matrix::translate(osg::Vec3(0,0,-30)));
 	multiTrans->addChild(tlo);
-	multiTrans->getOrCreateStateSet()->setRenderBinDetails(50,"RenderBin");
+	//multiTrans->getOrCreateStateSet()->setRenderBinDetails(50,"RenderBin");
 
 	//pocetno podesavanje modela
 	VoziloInputDeviceStateType* vIDevState = new VoziloInputDeviceStateType;
 	Vozilo* v = new Vozilo("../../Modeli/ana_f1.IVE");
-	osg::ref_ptr<osg::MatrixTransform> tran_fer = new osg::MatrixTransform();
-	tran_fer->addChild(v->Model);
-	tran_fer->preMult(osg::Matrix::translate(osg::Vec3(150,-250,0)));
+	osg::ref_ptr<osg::MatrixTransform> tran_fermula = new osg::MatrixTransform();
+	tran_fermula->addChild(v->Model);
+	tran_fermula->preMult(osg::Matrix::translate(osg::Vec3(150,-250,0)));
+	tran_fermula->getOrCreateStateSet()->setRenderBinDetails(450,"RenderBin");
 	//update kontrola
-	tran_fer->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v,zg_fer));
+	tran_fermula->setUpdateCallback(new UpdateVoziloPosCallback(vIDevState,v,zg_fer));
 	MyKeyboardEventHandler* voziloEventHandler = new MyKeyboardEventHandler(vIDevState, v);
 	viewer.addEventHandler(voziloEventHandler);
-	multiTrans->addChild(tran_fer);
+	multiTrans->addChild(tran_fermula);
 	osg::ref_ptr<osg::MatrixTransform> tr_ces = new osg::MatrixTransform(osg::Matrix::translate(osg::Vec3(0,-170,0)));
 
 	osgART::TrackerCallback::addOrSet(root.get(), tracker.get());
+
 
 #pragma region HUD
 	/************HUD**************/
